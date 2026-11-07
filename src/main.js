@@ -786,13 +786,23 @@ function showAdhan(k) {
   $('adhanHint').textContent = L.adhanHint;
   show('adhan');
   const list = adhanList(base);
-  const a = $('adhanAudio'); let idx = 0;
-  const tryPlay = () => {
-    if (idx >= list.length) return;
-    a.src = list[idx++]; a.load();
-    const p = a.play(); if (p && p.catch) p.catch(() => {});
+  alog('adhan ' + k + ' shown (visible=' + !document.hidden + ')');
+  const a = $('adhanAudio'); let idx = 0; let retried = false; needTap = false;
+  const blocked = (why) => {
+    alog('adhan audio blocked: ' + why);
+    if (!retried) { retried = true; setTimeout(() => { const p2 = a.play(); if (p2 && p2.catch) p2.catch((e2) => blocked('retry ' + (e2 && e2.name))); }, 1500); return; }
+    needTap = true; $('adhanHint').textContent = L.adhanTap;
   };
-  a.onerror = tryPlay;
+  const tryPlay = () => {
+    if (idx >= list.length) { alog('adhan audio: no playable file'); return; }
+    a.src = list[idx++]; a.load();
+    const p = a.play();
+    if (p && p.catch) p.catch((e) => { if (e && e.name === 'NotAllowedError') blocked(e.name); else if (e && e.name !== 'AbortError') alog('play() error ' + e.name); });
+  };
+  a.onplaying = () => { needTap = false; $('adhanHint').textContent = L.adhanHint; alog('adhan audio playing: ' + String(a.currentSrc || a.src).split('/').pop()); };
+  a.onerror = () => { alog('adhan audio error ' + (a.error ? a.error.code : '?') + ' ' + String(a.src).split('/').pop()); tryPlay(); };
+  // if nothing is playing after 4 s, treat it as blocked (some webOS builds fail silently)
+  setTimeout(() => { if (view === 'adhan' && a.paused && !needTap) blocked('not started after 4 s'); }, 4000);
   a.onended = () => { setTimeout(() => { if (view === 'adhan') stopAdhan(); }, 60000); };
   tryPlay();
   setTimeout(() => { if (view === 'adhan') stopAdhan(); }, 8 * 60000);
@@ -842,7 +852,7 @@ document.addEventListener('keydown', (e) => {
   const k = e.keyCode; const rtl = S.lang === 'ar';
   if (nightOn() && view !== 'adhan') { nightMode(false); save('noor.offByNoor', false); e.preventDefault(); return; }
   if (!$('iqamahBanner').classList.contains('hidden')) { $('iqamahBanner').classList.add('hidden'); document.body.classList.remove('iqOn'); e.preventDefault(); return; }
-  if (view === 'adhan') { stopAdhan(); e.preventDefault(); return; }
+  if (view === 'adhan') { if (needTap && (k === 13 || k === 415)) { const a = $('adhanAudio'); const p = a.play(); if (p && p.catch) p.catch((er) => alog('tap play failed ' + (er && er.name))); needTap = false; } else stopAdhan(); e.preventDefault(); return; }
   if (k === K.RED) { openAdhkar('m'); return; }
   if (k === K.GREEN) { openAdhkar('e'); return; }
   if (k === K.YELLOW) { openPlayer(18); return; }
@@ -922,14 +932,28 @@ document.addEventListener('wheel', (e) => { if (view === 'player' || view === 'd
    params { prayer: 'asr', at: <epoch ms>, source: 'noor-helper' }.
    Noor goes to the home screen, shows a "coming" banner, and the normal
    scheduler plays the adhan at the exact time. */
-let soonUntil = 0; let wakeFromOff = false;
+let soonUntil = 0; let wakeFromOff = false; let adhanTimer = null; let needTap = false;
 function handleLaunch(params) {
   if (!params) return;
   if (typeof params === 'string') { try { params = JSON.parse(params); } catch (e) { return; } }
   if (params.capTest) { capLaunchSeen = true; return; }
   if (params.afterRenew) { closePanels(); if (params.screenWasOff && S.reOff) screenOff(); return; }
   if (!params.prayer) return;
+  alog('launched by ' + (params.source || '?') + ' for ' + params.prayer + (params.at ? ' at ' + new Date(+params.at).toTimeString().slice(0, 8) : ''));
   if (params.screenWasOff) wakeFromOff = true;
+  // own timer for the exact adhan time (doesn't depend on the 1 s clock tick)
+  if (params.at && !params.test) {
+    const at = +params.at, ms = at - Date.now();
+    clearTimeout(adhanTimer);
+    if (ms > -180000) adhanTimer = setTimeout(() => {
+      const key = cityNow(new Date(at)).toISOString().slice(0, 10) + ':' + params.prayer;
+      if (firedKey === key || view === 'adhan') return;
+      firedKey = key; save('noor.fired', key);
+      const fri = cityNow(new Date(at)).getUTCDay() === 5;
+      alog('adhan timer fired for ' + params.prayer);
+      if (S.adhan) showAdhan(params.prayer === 'dhuhr' && fri ? 'jumuah' : params.prayer);
+    }, Math.max(0, ms));
+  }
   if (view === 'adhan') return;
   stopPreview && stopPreview();
   closePanels(); document.body.classList.remove('dim');

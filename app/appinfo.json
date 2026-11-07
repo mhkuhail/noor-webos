@@ -1,6 +1,6 @@
 {
   "id": "com.noor.webos",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "vendor": "Noor for webOS",
   "type": "web",
   "main": "index.html",

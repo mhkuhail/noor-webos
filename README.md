@@ -6,12 +6,12 @@
 
 مواقيت الصلاة والأذان والقرآن الكريم كاملًا والأذكار — على تلفزيونات LG بنظام webOS
 
-[![Version](https://img.shields.io/badge/version-2.0.0-1f6b4f)](https://github.com/mhkuhail/noor-webos/releases/tag/v2.0.0)
+[![Version](https://img.shields.io/badge/version-2.0.1-1f6b4f)](https://github.com/mhkuhail/noor-webos/releases/tag/v2.0.1)
 [![webOS](https://img.shields.io/badge/LG%20webOS-4.0%2B-a50034)](docs/INSTALL.md)
 [![Build](https://github.com/mhkuhail/noor-webos/actions/workflows/build.yml/badge.svg)](https://github.com/mhkuhail/noor-webos/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**⬇️ [Download v2.0.0 (.ipk)](https://github.com/mhkuhail/noor-webos/releases/download/v2.0.0/com.noor.webos_2.0.0_all.ipk)** · [All releases](https://github.com/mhkuhail/noor-webos/releases)
+**⬇️ [Download v2.0.1 (.ipk)](https://github.com/mhkuhail/noor-webos/releases/download/v2.0.1/com.noor.webos_2.0.1_all.ipk)** · [All releases](https://github.com/mhkuhail/noor-webos/releases)
 
 [Install](#install) · [Features](#features) · [What's new](#whats-new-in-200) · [Build from source](#build-from-source) · [Docs](docs/) · [العربية](#بالعربية)
 
@@ -73,7 +73,7 @@ Full history: [CHANGELOG.md](CHANGELOG.md).
 
 1. On the TV: install **Developer Mode** from the LG Content Store, sign in, turn on *Dev Mode Status* (the TV restarts), then turn on *Key Server*.
 2. On the computer: install [webOS Dev Manager](https://github.com/webosbrew/dev-manager-desktop/releases) and add the TV (IP + passphrase from the Developer Mode app).
-3. Download **[com.noor.webos_2.0.0_all.ipk](https://github.com/mhkuhail/noor-webos/releases/download/v2.0.0/com.noor.webos_2.0.0_all.ipk)** (or the newest from [Releases](https://github.com/mhkuhail/noor-webos/releases)) → Dev Manager → **Install**.
+3. Download **[com.noor.webos_2.0.0_all.ipk](https://github.com/mhkuhail/noor-webos/releases/download/v2.0.1/com.noor.webos_2.0.1_all.ipk)** (or the newest from [Releases](https://github.com/mhkuhail/noor-webos/releases)) → Dev Manager → **Install**.
 4. Open **Noor** on the TV → 🔵 Blue → *TV capability check*.
 
 Full guide with screenshots and macOS notes: **[docs/INSTALL.md](docs/INSTALL.md)**.
@@ -139,7 +139,7 @@ Not affiliated with LG Electronics. *webOS* and *LG* are trademarks of LG Electr
 أذكار الصباح والمساء مع عدّاد · تذكير الجمعة والأيام البيض وصيام الاثنين والخميس · ثلاث خلفيات (زخرفة، مسجد الليل، أوقات اليوم) ·
 تشغيل يوتيوب وكل تطبيقات التلفاز · تجديد وضع المطوّر تلقائيًا · فحص قدرات التلفاز.
 
-**الإصدار الحالي: 2.0.0** — ⬇️ [تنزيل ملف التطبيق ‎.ipk‎](https://github.com/mhkuhail/noor-webos/releases/download/v2.0.0/com.noor.webos_2.0.0_all.ipk)
+**الإصدار الحالي: 2.0.1** — ⬇️ [تنزيل ملف التطبيق ‎.ipk‎](https://github.com/mhkuhail/noor-webos/releases/download/v2.0.1/com.noor.webos_2.0.1_all.ipk)
 
 **الجديد في 2.0.0:** إصلاح الخدمة الخلفية على webOS 4 فتظهر تنبيهات الأذان والإقامة أثناء يوتيوب · ٤٩ مدينة في ١٩ دولة · إعدادات جديدة بأقسام (المدينة، الأذان، الإقامة، المظهر، القرآن، النظام).
 

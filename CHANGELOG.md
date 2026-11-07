@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.0.1
+- When the service brings Noor back over YouTube/Netflix, Noor now sets its own timer for the exact adhan time (no longer relies only on the 1-second clock).
+- If the TV blocks automatic sound, Noor retries and then shows «اضغط OK لتشغيل صوت الأذان» — OK plays the adhan instead of closing it.
+- Every adhan step is written to *Settings → System → Adhan service log* (launch, adhan shown, audio playing / blocked / error).
+
 ## 2.0.0
 - **Background service fixed on webOS 4.x.** LG TVs with webOS 4.x run JS services on Node.js 0.12.2 (ES5 only); the service
   crashed at start-up, so adhan/iqamah notifications never reached YouTube/Netflix. It is now compiled to ES5 with polyfills
