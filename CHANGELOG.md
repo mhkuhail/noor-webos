@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.0
+- **106 cities in 30 countries**: all 22 Arab League countries (Gulf, Iraq & the Levant, Egypt, Sudan, Libya, Tunisia, Algeria,
+  Morocco, Mauritania, Somalia, Djibouti, Comoros) plus the **United States** (14 cities) and **Canada** (5), alongside Türkiye,
+  Pakistan, Malaysia, Indonesia, the UK and Germany.
+- New calculation methods: North America (ISNA), Morocco (Habous, 19°/17°), Algeria (18°/17°), Tunisia (18°/18°) — used by both
+  the app and the background service.
+- **Country / City / Method pickers**: OK on the row opens a grid; arrows move, OK selects, Back cancels (no more stepping through 30 countries).
+
 ## 2.0.1
 - When the service brings Noor back over YouTube/Netflix, Noor now sets its own timer for the exact adhan time (no longer relies only on the 1-second clock).
 - If the TV blocks automatic sound, Noor retries and then shows «اضغط OK لتشغيل صوت الأذان» — OK plays the adhan instead of closing it.

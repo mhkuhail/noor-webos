@@ -59,7 +59,10 @@ function timesFor(dayOffset) {
   var c = state.cfg; var tz = c.tz == null ? 180 : c.tz;
   var city = new Date(Date.now() + tz * 60000); city.setUTCDate(city.getUTCDate() + dayOffset);
   var date = new Date(city.getUTCFullYear(), city.getUTCMonth(), city.getUTCDate());
-  var pt = new adhan.PrayerTimes(new adhan.Coordinates(c.lat, c.lng), date, adhan.CalculationMethod[c.method || 'UmmAlQura']());
+  var params;
+  if (c.angles && c.angles.length === 2) { params = adhan.CalculationMethod.Other(); params.fajrAngle = c.angles[0]; params.ishaAngle = c.angles[1]; }
+  else params = (adhan.CalculationMethod[c.method] || adhan.CalculationMethod.UmmAlQura)();
+  var pt = new adhan.PrayerTimes(new adhan.Coordinates(c.lat, c.lng), date, params);
   var out = {}; PRAYERS.forEach(function (k) { out[k] = pt[k]; }); return out;
 }
 function nextPrayer() {

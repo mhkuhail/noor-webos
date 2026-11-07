@@ -1,5 +1,5 @@
 import { Coordinates, CalculationMethod, PrayerTimes } from 'adhan';
-import { CITIES, COUNTRIES, METHODS, PRAYERS, T, ADHKAR, RECITER_URL, EZAN_FILES, ADHAN_SOURCES } from './content.js';
+import { CITIES, COUNTRIES, METHODS, PRAYERS, T, ADHKAR, RECITER_URL, EZAN_FILES, ADHAN_SOURCES, CUSTOM_METHODS } from './content.js';
 
 /* ================= state & storage ================= */
 const NOOR_VERSION = typeof __NOOR_VERSION__ !== 'undefined' ? __NOOR_VERSION__ : '';
@@ -69,7 +69,7 @@ function heartbeat() {
 }
 function startService() {
   const c = city();
-  luna(SVC + 'start', { lat: c.lat, lng: c.lng, method: c.method, tz: c.tz, renew: S.renewDev, iqamah: S.iqamah ? S.iq : null }, (err) => { serviceOk = !err; });
+  luna(SVC + 'start', { lat: c.lat, lng: c.lng, method: c.method, angles: CUSTOM_METHODS[c.method] || null, tz: c.tz, renew: S.renewDev, iqamah: S.iqamah ? S.iq : null }, (err) => { serviceOk = !err; });
 }
 let serviceOk = false;
 function screenCtl(on, cb) {
@@ -105,10 +105,15 @@ function fmtTime(d, withSec) {
   return (S.h12 ? h : pad(h)) + ':' + pad(m) + (withSec ? ':' + pad(c.getUTCSeconds()) : '') + (suf ? ' ' + suf : '');
 }
 
+function methodParams(m) {
+  const cm = CUSTOM_METHODS[m];
+  if (cm) { const p = CalculationMethod.Other(); p.fajrAngle = cm[0]; p.ishaAngle = cm[1]; return p; }
+  return (CalculationMethod[m] || CalculationMethod.MuslimWorldLeague)();
+}
 function timesFor(dayOffset) {
   const c = cityNow(); c.setUTCDate(c.getUTCDate() + (dayOffset || 0));
   const date = new Date(c.getUTCFullYear(), c.getUTCMonth(), c.getUTCDate()); // adhan reads Y/M/D only
-  const params = CalculationMethod[city().method]();
+  const params = methodParams(city().method);
   const pt = new PrayerTimes(new Coordinates(city().lat, city().lng), date, params);
   return { fajr: pt.fajr, sunrise: pt.sunrise, dhuhr: pt.dhuhr, asr: pt.asr, maghrib: pt.maghrib, isha: pt.isha };
 }
@@ -543,10 +548,19 @@ const SECTIONS = [
   { id: 'system', title: 'secSystem', sum: () => 'Noor ' + NOOR_VERSION },
 ];
 let settingsSec = null;
+let pick = null; const PCOLS = 4;
+const PICK_ROWS = ['country', 'city', 'method'];
+function pickOpen(r) { const opts = rowOpts(r); pick = { row: r, opts: opts, i: Math.max(0, opts.indexOf(rowVal(r))) }; renderSettings(); }
+function pickCommit() {
+  const r = pick.row, v = pick.opts[pick.i]; pick = null;
+  if (r.set) r.set(v); else S[r.k] = v;
+  save('noor.settings', S); startService(); weather = null; fetchWeather(); tick(true);
+  applyChrome(); renderSettings();
+}
 const VR = () => (settingsSec ? ROWS.filter((r) => r.sec === settingsSec) : []);
 const rowVal = (r) => (r.get ? r.get() : r.iq ? S.iq[r.p] : r.p ? S.src[r.p] : S[r.k]);
 const rowOpts = (r) => (typeof r.opts === 'function' ? r.opts() : r.opts);
-function openSettings() { view = 'settings'; settingsSec = null; rowIdx = 0; renderSettings(); show('settings'); }
+function openSettings() { view = 'settings'; settingsSec = null; pick = null; rowIdx = 0; renderSettings(); show('settings'); }
 function renderSettings() {
   const L = tr();
   let html;
@@ -565,9 +579,21 @@ function renderSettings() {
       (settingsSec === 'adhan' ? ezanStatusHtml() : '') +
       (settingsSec === 'system' ? '<div class="note">Noor ' + NOOR_VERSION + ' for webOS · prayer times calculated on-device (adhan-js) · Quran text: alquran.cloud · Recitation: Badr Al-Turki (mp3quran.net) · Weather: Open-Meteo · github.com/mhkuhail/noor-webos</div>' : '');
   }
+  if (pick) {
+    const r = pick.row;
+    $('settingsTitle').textContent = L.settings + ' › ' + L[r.label || r.k]; $('settingsHint').textContent = L.pickHint;
+    html = '<div class="pickGrid">' + pick.opts.map((v, i) => '<div class="pickItem' + (i === pick.i ? ' focus' : '') + (v === rowVal(r) ? ' cur' : '') + '" data-p="' + i + '">' + escapeHtml(r.fmt(v)) + '</div>').join('') + '</div>';
+  }
   $('settingsBody').innerHTML = '<div id="setScroll">' + html + '</div>';
+  if (pick) {
+    Array.prototype.forEach.call(document.querySelectorAll('#settingsBody .pickItem'), (el) => el.addEventListener('click', () => { pick.i = +el.dataset.p; pickCommit(); }));
+    const el = document.querySelectorAll('#settingsBody .pickItem')[pick.i], box = $('settingsBody'), inner = $('setScroll');
+    let y = 0; if (el && el.offsetTop + el.offsetHeight > box.clientHeight - 20) y = el.offsetTop + el.offsetHeight - box.clientHeight + 20;
+    inner.style.transform = 'translateY(' + (-Math.max(0, y)) + 'px)';
+    return;
+  }
   Array.prototype.forEach.call(document.querySelectorAll('#settingsBody .row, #settingsBody .secCard'), (el) => el.addEventListener('click', () => {
-    rowIdx = +el.dataset.i; if (!settingsSec) { settingsSec = SECTIONS[rowIdx].id; rowIdx = 0; renderSettings(); } else changeRow(1); }));
+    rowIdx = +el.dataset.i; if (!settingsSec) { settingsSec = SECTIONS[rowIdx].id; rowIdx = 0; renderSettings(); } else if (PICK_ROWS.indexOf(VR()[rowIdx].k) >= 0) pickOpen(VR()[rowIdx]); else changeRow(1); }));
   const rowEl = document.querySelectorAll('#settingsBody .row, #settingsBody .secCard')[rowIdx], box = $('settingsBody'), inner = $('setScroll');
   if (rowEl) {
     const viewH = box.clientHeight; let y = 0;
@@ -903,6 +929,15 @@ document.addEventListener('keydown', (e) => {
     else if (back) return closePanels();
     focusDhikr();
   } else if (view === 'settings') {
+    if (pick) {
+      const n = pick.opts.length, d = rtl ? -1 : 1;
+      if (k === K.RIGHT) pick.i += d; else if (k === K.LEFT) pick.i -= d;
+      else if (k === K.DOWN) pick.i += PCOLS; else if (k === K.UP) pick.i -= PCOLS;
+      else if (k === K.OK) { pickCommit(); e.preventDefault(); return; }
+      else if (back) pick = null;
+      if (pick) pick.i = Math.max(0, Math.min(n - 1, pick.i));
+      renderSettings(); e.preventDefault(); return;
+    }
     if (!settingsSec) {
       const n = SECTIONS.length, cols = 2;
       if (k === K.DOWN) rowIdx = Math.min(n - 1, rowIdx + cols); else if (k === K.UP) rowIdx = Math.max(0, rowIdx - cols);
@@ -917,6 +952,7 @@ document.addEventListener('keydown', (e) => {
     else if (k === K.UP) { stopPreview(); rowIdx = Math.max(0, rowIdx - 1); }
     else if (k === K.LEFT) return changeRow(rtl ? 1 : -1);
     else if (k === K.OK && rows[rowIdx].p && !rows[rowIdx].iq) return previewSource(rowIdx);
+    else if (k === K.OK && PICK_ROWS.indexOf(rows[rowIdx].k) >= 0) { pickOpen(rows[rowIdx]); e.preventDefault(); return; }
     else if (k === K.RIGHT || k === K.OK) return changeRow(rtl ? -1 : 1);
     else if (back) { stopPreview(); const id = settingsSec; settingsSec = null; rowIdx = SECTIONS.map((x) => x.id).indexOf(id); renderSettings(); e.preventDefault(); return; }
     renderSettings();

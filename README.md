@@ -6,14 +6,14 @@
 
 مواقيت الصلاة والأذان والقرآن الكريم كاملًا والأذكار — على تلفزيونات LG بنظام webOS
 
-[![Version](https://img.shields.io/badge/version-2.0.1-1f6b4f)](https://github.com/mhkuhail/noor-webos/releases/tag/v2.0.1)
+[![Version](https://img.shields.io/badge/version-2.1.0-1f6b4f)](https://github.com/mhkuhail/noor-webos/releases/tag/v2.1.0)
 [![webOS](https://img.shields.io/badge/LG%20webOS-4.0%2B-a50034)](docs/INSTALL.md)
 [![Build](https://github.com/mhkuhail/noor-webos/actions/workflows/build.yml/badge.svg)](https://github.com/mhkuhail/noor-webos/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**⬇️ [Download v2.0.1 (.ipk)](https://github.com/mhkuhail/noor-webos/releases/download/v2.0.1/com.noor.webos_2.0.1_all.ipk)** · [All releases](https://github.com/mhkuhail/noor-webos/releases)
+**⬇️ [Download v2.1.0 (.ipk)](https://github.com/mhkuhail/noor-webos/releases/download/v2.1.0/com.noor.webos_2.1.0_all.ipk)** · [All releases](https://github.com/mhkuhail/noor-webos/releases)
 
-[Install](#install) · [Features](#features) · [What's new](#whats-new-in-200) · [Build from source](#build-from-source) · [Docs](docs/) · [العربية](#بالعربية)
+[Install](#install) · [Features](#features) · [What's new](#whats-new-in-210) · [Build from source](#build-from-source) · [Docs](docs/) · [العربية](#بالعربية)
 
 <img src="docs/screenshots/zakhrafa.jpg" width="49%"> <img src="docs/screenshots/masjid.jpg" width="49%">
 
@@ -27,7 +27,7 @@ rebuilt from scratch for **LG webOS**, which cannot run Android apps. It runs in
 
 | | |
 |---|---|
-| 🕌 **Prayer times** | Calculated on the TV (works offline) with [adhan-js](https://github.com/batoulapps/adhan-js): 49 cities in 19 countries with their official methods (Umm al-Qura, Diyanet, Dubai, Kuwait, Qatar, MWL, Egyptian, …). Big countdown to the next prayer, Jumu'ah on Fridays. |
+| 🕌 **Prayer times** | Calculated on the TV (works offline) with [adhan-js](https://github.com/batoulapps/adhan-js): 106 cities in 30 countries — every Arab country plus the US and Canada — with their official methods (Umm al-Qura, Diyanet, Dubai, Kuwait, Qatar, MWL, Egyptian, ISNA, Morocco, Algeria, Tunisia, …). Big countdown to the next prayer, Jumu'ah on Fridays. |
 | 🔔 **Iqamah** | Countdown after each adhan, then banner + tone + TV notification. Per-prayer intervals (default Fajr 22 · Dhuhr 17 · Asr 17 · Maghrib 7 · Isha 17 min). |
 | 📢 **Adhan** | Plays automatically at every prayer — a different recording (and Turkish makam) per prayer: Saba, Uşşak, Rast, Segâh, Hicaz. |
 | ⏰ **Always on** | A background service on the TV brings Noor to the front at prayer time, even over YouTube/Netflix, and wakes the screen from *Screen off* / *Night mode*. |
@@ -41,7 +41,14 @@ rebuilt from scratch for **LG webOS**, which cannot run Android apps. It runs in
 
 <img src="docs/screenshots/adhan.jpg" width="32%"> <img src="docs/screenshots/apps.jpg" width="32%"> <img src="docs/screenshots/settings.jpg" width="32%">
 
-## What's new in 2.0.0
+## What's new in 2.1.0
+- **106 cities in 30 countries**: all 22 Arab countries plus the **United States** and **Canada** (and Türkiye, Pakistan, Malaysia, Indonesia, UK, Germany).
+- New methods: North America (ISNA), Morocco, Algeria, Tunisia.
+- Country, city and method now open a **picker grid** — press OK, choose with the arrows, OK again.
+
+<img src="docs/screenshots/country-picker.jpg" width="60%">
+
+### 2.0.0
 
 - **Adhan & iqamah notifications over YouTube/Netflix now work on webOS 4.x** — the background service is compiled for the TV's Node.js 0.12.
 - **49 cities in 19 countries**, each with its official calculation method.
@@ -73,7 +80,7 @@ Full history: [CHANGELOG.md](CHANGELOG.md).
 
 1. On the TV: install **Developer Mode** from the LG Content Store, sign in, turn on *Dev Mode Status* (the TV restarts), then turn on *Key Server*.
 2. On the computer: install [webOS Dev Manager](https://github.com/webosbrew/dev-manager-desktop/releases) and add the TV (IP + passphrase from the Developer Mode app).
-3. Download **[com.noor.webos_2.0.0_all.ipk](https://github.com/mhkuhail/noor-webos/releases/download/v2.0.1/com.noor.webos_2.0.1_all.ipk)** (or the newest from [Releases](https://github.com/mhkuhail/noor-webos/releases)) → Dev Manager → **Install**.
+3. Download **[com.noor.webos_2.1.0_all.ipk](https://github.com/mhkuhail/noor-webos/releases/download/v2.1.0/com.noor.webos_2.1.0_all.ipk)** (or the newest from [Releases](https://github.com/mhkuhail/noor-webos/releases)) → Dev Manager → **Install**.
 4. Open **Noor** on the TV → 🔵 Blue → *TV capability check*.
 
 Full guide with screenshots and macOS notes: **[docs/INSTALL.md](docs/INSTALL.md)**.
@@ -101,7 +108,7 @@ can wake a TV from full standby: **[docs/ALWAYS-ON.md](docs/ALWAYS-ON.md)**.
 git clone https://github.com/mhkuhail/noor-webos.git && cd noor-webos
 npm install
 # adhan recordings are in app/audio/ — replace them to use other muezzins
-npm run package            # → dist/com.noor.webos_2.0.0_all.ipk
+npm run package            # → dist/com.noor.webos_2.1.0_all.ipk
 npm run install-tv         # ares-install to the device named "tv" (ares-setup-device)
 ```
 
@@ -139,7 +146,9 @@ Not affiliated with LG Electronics. *webOS* and *LG* are trademarks of LG Electr
 أذكار الصباح والمساء مع عدّاد · تذكير الجمعة والأيام البيض وصيام الاثنين والخميس · ثلاث خلفيات (زخرفة، مسجد الليل، أوقات اليوم) ·
 تشغيل يوتيوب وكل تطبيقات التلفاز · تجديد وضع المطوّر تلقائيًا · فحص قدرات التلفاز.
 
-**الإصدار الحالي: 2.0.1** — ⬇️ [تنزيل ملف التطبيق ‎.ipk‎](https://github.com/mhkuhail/noor-webos/releases/download/v2.0.1/com.noor.webos_2.0.1_all.ipk)
+**الإصدار الحالي: 2.1.0** — ⬇️ [تنزيل ملف التطبيق ‎.ipk‎](https://github.com/mhkuhail/noor-webos/releases/download/v2.1.0/com.noor.webos_2.1.0_all.ipk)
+
+**الجديد في 2.1.0:** ١٠٦ مدن في ٣٠ دولة — جميع الدول العربية مع الولايات المتحدة وكندا · اختيار الدولة والمدينة من شبكة (OK ثم الأسهم ثم OK).
 
 **الجديد في 2.0.0:** إصلاح الخدمة الخلفية على webOS 4 فتظهر تنبيهات الأذان والإقامة أثناء يوتيوب · ٤٩ مدينة في ١٩ دولة · إعدادات جديدة بأقسام (المدينة، الأذان، الإقامة، المظهر، القرآن، النظام).
 

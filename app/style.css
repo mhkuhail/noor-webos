@@ -194,3 +194,11 @@ html[dir=ltr] .secCard svg { margin:0 26px 0 0; }
 .secCard b { display:block; font-size:40px; font-weight:800; line-height:1.3; }
 .secCard small { display:block; font-size:24px; color:rgba(255,255,255,.72); margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:620px; }
 .secCard.focus { border-color:#fff; background:rgba(255,255,255,.16); }
+
+/* picker grid (country / city / method) */
+.pickGrid { display:flex; flex-wrap:wrap; padding:6px 4px; direction:rtl; }
+html[dir=ltr] .pickGrid { direction:ltr; }
+.pickItem { width:23%; margin:0.5% 1%; box-sizing:border-box; padding:16px 14px; border-radius:14px; text-align:center;
+  background:rgba(255,255,255,.07); border:3px solid rgba(255,255,255,.14); font-size:30px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pickItem.cur { border-color:rgba(212,175,55,.8); color:#f3dc8a; }
+.pickItem.focus { border-color:#fff; background:rgba(255,255,255,.2); -webkit-transform:scale(1.04); transform:scale(1.04); }
