@@ -1,0 +1,13 @@
+{
+  "id": "com.noor.webos",
+  "version": "1.7.3",
+  "vendor": "Noor for webOS",
+  "type": "web",
+  "main": "index.html",
+  "title": "Noor",
+  "icon": "icon.png",
+  "largeIcon": "largeIcon.png",
+  "bgColor": "#04170f",
+  "resolution": "1920x1080",
+  "disableBackHistoryAPI": true
+}

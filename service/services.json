@@ -1,0 +1,2 @@
+{ "id": "com.noor.webos.service", "description": "Noor background prayer service",
+  "services": [ { "name": "com.noor.webos.service", "description": "Wakes the screen and opens Noor for the adhan" } ] }

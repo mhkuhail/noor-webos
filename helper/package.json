@@ -1,0 +1,18 @@
+{
+  "name": "noor-helper",
+  "version": "1.0.0",
+  "description": "Wakes an LG webOS TV before each prayer and opens Noor to play the adhan",
+  "main": "noor-helper.mjs",
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "adhan": "^4.4.6",
+    "lgtv2": "^2.1.0"
+  },
+  "devDependencies": {},
+  "type": "module",
+  "engines": {
+    "node": ">=20.19"
+  }
+}

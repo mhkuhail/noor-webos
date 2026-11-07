@@ -1,0 +1,18 @@
+{
+  "tvIp": "192.168.1.50",
+  "tvMac": "",
+  "city": "riyadh",
+  "wakeSecondsBefore": 60,
+  "adhanVolume": 20,
+  "turnOffAfterMinutes": 7,
+  "bootWaitSeconds": 6,
+  "prayers": [
+    "fajr",
+    "dhuhr",
+    "asr",
+    "maghrib",
+    "isha"
+  ],
+  "renewDevMode": true,
+  "renewEveryHours": 24
+}

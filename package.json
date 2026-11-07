@@ -1,0 +1,24 @@
+{
+  "name": "noor-webos",
+  "version": "1.7.3",
+  "private": true,
+  "description": "Noor \u2014 Islamic prayer times, adhan, full Quran (Badr Al-Turki) and adhkar for LG webOS TVs",
+  "license": "MIT",
+  "scripts": {
+    "build": "bash scripts/build.sh",
+    "package": "bash scripts/build.sh && ares-package build/app build/service -o dist",
+    "install-tv": "ares-install --device ${TV:-tv} dist/com.noor.webos_*_all.ipk",
+    "launch-tv": "ares-launch --device ${TV:-tv} com.noor.webos",
+    "clean": "rm -rf build dist"
+  },
+  "devDependencies": {
+    "@fontsource/amiri": "^5.3.0",
+    "@fontsource/cairo": "^5.3.0",
+    "@webos-tools/cli": "^3.2.6",
+    "adhan": "^4.4.3",
+    "esbuild": "^0.28.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

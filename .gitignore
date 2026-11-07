@@ -1,0 +1,12 @@
+node_modules/
+build/
+dist/
+*.ipk
+*.log
+.DS_Store
+# adhan recordings are copyrighted — keep them local
+app/audio/*.mp3
+# helper runtime files
+helper/config.json
+helper/state/
+helper/node_modules/
