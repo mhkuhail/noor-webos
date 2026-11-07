@@ -6,7 +6,14 @@
 
 مواقيت الصلاة والأذان والقرآن الكريم كاملًا والأذكار — على تلفزيونات LG بنظام webOS
 
-[Install](#install) · [Features](#features) · [Build from source](#build-from-source) · [Docs](docs/) · [العربية](#بالعربية)
+[![Version](https://img.shields.io/badge/version-1.7.3-1f6b4f)](https://github.com/mhkuhail/noor-webos/releases/tag/v1.7.3)
+[![webOS](https://img.shields.io/badge/LG%20webOS-4.0%2B-a50034)](docs/INSTALL.md)
+[![Build](https://github.com/mhkuhail/noor-webos/actions/workflows/build.yml/badge.svg)](https://github.com/mhkuhail/noor-webos/actions/workflows/build.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
+**⬇️ [Download v1.7.3 (.ipk)](https://github.com/mhkuhail/noor-webos/releases/download/v1.7.3/com.noor.webos_1.7.3_all.ipk)** · [All releases](https://github.com/mhkuhail/noor-webos/releases)
+
+[Install](#install) · [Features](#features) · [What's new](#whats-new-in-173) · [Build from source](#build-from-source) · [Docs](docs/) · [العربية](#بالعربية)
 
 <img src="docs/screenshots/zakhrafa.jpg" width="49%"> <img src="docs/screenshots/masjid.jpg" width="49%">
 
@@ -33,13 +40,23 @@ rebuilt from scratch for **LG webOS**, which cannot run Android apps. It runs in
 
 <img src="docs/screenshots/adhan.jpg" width="32%"> <img src="docs/screenshots/apps.jpg" width="32%"> <img src="docs/screenshots/settings.jpg" width="32%">
 
+## What's new in 1.7.3
+
+- **Wallpapers fixed on webOS 4.x** — backgrounds now load on the TV's Chromium 53 (they were set through CSS variables, which it ignores).
+- **Apps screen never times out** — popular apps show instantly; the TV's real list replaces them when the TV allows it (1.7.1).
+- **Screen off → Night mode** — if the TV refuses to turn the screen off, Noor shows a black night screen and the adhan still plays on time (1.7.2).
+- **YouTube card and app launcher** (1.7.0) · **background prayer service on the TV** (1.6.0).
+- Five adhan recordings bundled, one per prayer.
+
+Full history: [CHANGELOG.md](CHANGELOG.md).
+
 ## Install
 
 **Requirements:** LG TV with webOS 4.0 or later (2018+), a free [LG developer account](https://webostv.developer.lge.com/), a computer on the same network.
 
 1. On the TV: install **Developer Mode** from the LG Content Store, sign in, turn on *Dev Mode Status* (the TV restarts), then turn on *Key Server*.
 2. On the computer: install [webOS Dev Manager](https://github.com/webosbrew/dev-manager-desktop/releases) and add the TV (IP + passphrase from the Developer Mode app).
-3. Download `com.noor.webos_<version>_all.ipk` from [Releases](../../releases) → Dev Manager → **Install**.
+3. Download **[com.noor.webos_1.7.3_all.ipk](https://github.com/mhkuhail/noor-webos/releases/download/v1.7.3/com.noor.webos_1.7.3_all.ipk)** (or the newest from [Releases](https://github.com/mhkuhail/noor-webos/releases)) → Dev Manager → **Install**.
 4. Open **Noor** on the TV → 🔵 Blue → *TV capability check*.
 
 Full guide with screenshots and macOS notes: **[docs/INSTALL.md](docs/INSTALL.md)**.
@@ -67,7 +84,7 @@ can wake a TV from full standby: **[docs/ALWAYS-ON.md](docs/ALWAYS-ON.md)**.
 git clone https://github.com/mhkuhail/noor-webos.git && cd noor-webos
 npm install
 # adhan recordings are in app/audio/ — replace them to use other muezzins
-npm run package            # → dist/com.noor.webos_<version>_all.ipk
+npm run package            # → dist/com.noor.webos_1.7.3_all.ipk
 npm run install-tv         # ares-install to the device named "tv" (ares-setup-device)
 ```
 
@@ -105,7 +122,12 @@ Not affiliated with LG Electronics. *webOS* and *LG* are trademarks of LG Electr
 أذكار الصباح والمساء مع عدّاد · تذكير الجمعة والأيام البيض وصيام الاثنين والخميس · ثلاث خلفيات (زخرفة، مسجد الليل، أوقات اليوم) ·
 تشغيل يوتيوب وكل تطبيقات التلفاز · تجديد وضع المطوّر تلقائيًا · فحص قدرات التلفاز.
 
-**التثبيت:** فعّل وضع المطوّر على التلفاز ← ثبّت webOS Dev Manager على الكمبيوتر ← نزّل ملف ‎.ipk من صفحة Releases ← Install.
+**الإصدار الحالي: 1.7.3** — ⬇️ [تنزيل ملف التطبيق ‎.ipk‎](https://github.com/mhkuhail/noor-webos/releases/download/v1.7.3/com.noor.webos_1.7.3_all.ipk)
+
+**الجديد في 1.7.3:** إصلاح ظهور الخلفيات (الزخرفة ومسجد الليل وأوقات اليوم) على تلفزيونات webOS 4 · قائمة التطبيقات تظهر فورًا دون انتظار ·
+«وضع الليل» عندما لا يسمح التلفاز بإطفاء الشاشة مع بقاء الأذان في وقته · بطاقة يوتيوب ومشغّل التطبيقات · خدمة الأذان الخلفية · ملفات الأذان الخمسة مضمّنة.
+
+**التثبيت:** فعّل وضع المطوّر على التلفاز ← ثبّت webOS Dev Manager على الكمبيوتر ← نزّل ملف ‎.ipk‎ أعلاه ← Install.
 **مهم:** لا تطفئ التلفاز بزر الطاقة ليلًا؛ استخدم بطاقة «إطفاء الشاشة» في نور ليبقى الأذان يعمل.
 **ملفات الأذان** موجودة في `app/audio/` — استبدلها بنفس الأسماء لتغيير المؤذن.
 
