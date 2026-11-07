@@ -64,9 +64,9 @@ can wake a TV from full standby: **[docs/ALWAYS-ON.md](docs/ALWAYS-ON.md)**.
 ## Build from source
 
 ```bash
-git clone https://github.com/<you>/noor-webos.git && cd noor-webos
+git clone https://github.com/mhkuhail/noor-webos.git && cd noor-webos
 npm install
-# optional: put your adhan MP3s in app/audio/ (see app/audio/README.md)
+# adhan recordings are in app/audio/ — replace them to use other muezzins
 npm run package            # → dist/com.noor.webos_<version>_all.ipk
 npm run install-tv         # ares-install to the device named "tv" (ares-setup-device)
 ```
@@ -107,6 +107,6 @@ Not affiliated with LG Electronics. *webOS* and *LG* are trademarks of LG Electr
 
 **التثبيت:** فعّل وضع المطوّر على التلفاز ← ثبّت webOS Dev Manager على الكمبيوتر ← نزّل ملف ‎.ipk من صفحة Releases ← Install.
 **مهم:** لا تطفئ التلفاز بزر الطاقة ليلًا؛ استخدم بطاقة «إطفاء الشاشة» في نور ليبقى الأذان يعمل.
-**ملفات الأذان** غير مضمّنة في المستودع لحقوق النشر — ضع ملفاتك في `app/audio/` قبل البناء.
+**ملفات الأذان** موجودة في `app/audio/` — استبدلها بنفس الأسماء لتغيير المؤذن.
 
 الدليل الكامل: [docs/INSTALL.md](docs/INSTALL.md) · حل المشكلات: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)

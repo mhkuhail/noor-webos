@@ -20,4 +20,4 @@ Quick UI iteration in a desktop browser: `npm run build`, then open `build/app/i
 - Service code runs on **Node 8**: no `async/await`.
 - Every privileged webOS call needs a fallback and should show up in the capability check.
 - Never type Quranic text by hand — load it from the Quran API.
-- Don't commit adhan recordings or other copyrighted audio.
+- Replace adhan recordings in `app/audio/` with the same file names.

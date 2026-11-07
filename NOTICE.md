@@ -15,9 +15,9 @@
 - Optional adhan streams — [assabile.com](https://www.assabile.com)
 - Weather — [Open-Meteo](https://open-meteo.com) (CC BY 4.0)
 
-## Not included
+## Adhan recordings
 
-Adhan recordings are copyrighted by their reciters/publishers and are **not** part of this repository.
-`app/chime.mp3` is generated (sine tones) and may be used freely.
+`app/audio/ezan-*.mp3` are adhan recordings whose rights belong to their reciters/publishers; they are included
+for personal use of this app. `app/chime.mp3` is generated (sine tones) and may be used freely.
 
 LG, webOS and ThinQ are trademarks of LG Electronics Inc. This project is not affiliated with LG.

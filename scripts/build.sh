@@ -14,11 +14,11 @@ node -e "const f='app/appinfo.json',a=require('./'+f);a.version='$VERSION';requi
 for w in 400 700; do cp node_modules/@fontsource/amiri/files/amiri-arabic-$w-normal.woff2 build/app/fonts/; done
 for s in arabic latin; do for w in 300 400 700 800; do cp node_modules/@fontsource/cairo/files/cairo-$s-$w-normal.woff2 build/app/fonts/; done; done
 
-# 3) adhan recordings: NOT in git (copyright). Put your own MP3s in app/audio/ — see app/audio/README.md
+# 3) adhan recordings from app/audio/ (copied as-is; NORMALIZE=1 re-encodes new files with ffmpeg loudnorm)
 shopt -s nullglob
 AUDIO=(app/audio/ezan-*.mp3)
 if [ ${#AUDIO[@]} -gt 0 ]; then
-  if command -v ffmpeg >/dev/null && [ "${NORMALIZE:-1}" = "1" ]; then
+  if command -v ffmpeg >/dev/null && [ "${NORMALIZE:-0}" = "1" ]; then
     for f in "${AUDIO[@]}"; do ffmpeg -y -loglevel error -i "$f" -map 0:a -map_metadata -1 -af loudnorm=I=-16:TP=-1.5:LRA=11 -ar 44100 -ac 2 -b:a 128k "build/app/audio/$(basename "$f")"; done
   else cp "${AUDIO[@]}" build/app/audio/; fi
   echo "✓ bundled ${#AUDIO[@]} adhan recording(s)"

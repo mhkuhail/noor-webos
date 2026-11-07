@@ -1,7 +1,6 @@
-# Adhan recordings (not included)
+# Adhan recordings
 
-Adhan recordings are copyrighted, so they are not part of this repository.
-Put your own MP3 files here before building — one per prayer:
+The five adhan recordings used by Noor, one per prayer (loudness-normalised, 128 kbps):
 
 | File | Prayer | Traditional Turkish makam |
 |---|---|---|
@@ -11,7 +10,5 @@ Put your own MP3 files here before building — one per prayer:
 | `ezan-maghrib.mp3` | Maghrib / Akşam | Segâh |
 | `ezan-isha.mp3` | Isha / Yatsı | Hicaz |
 
-`npm run package` bundles them into the app (loudness-normalised with ffmpeg if available).
-Missing files fall back to an online adhan (assabile.com) or the built-in chime.
-You can also upload them later with webOS Dev Manager → Files →
-`/media/developer/apps/usr/palm/applications/com.noor.webos/audio/`.
+To change a recording, replace the file (same name) and run `npm run package`.
+The recordings belong to their reciters/publishers.

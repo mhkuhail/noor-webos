@@ -49,7 +49,7 @@ ares-install --device tv com.noor.webos_<version>_all.ipk
 
 ## 5. Adhan recordings
 
-Release builds may not contain adhan audio (copyright). Two ways to add your own:
+The five adhan recordings are in `app/audio/` and are bundled automatically. To use other recordings:
 
 - **Before building:** put `ezan-fajr.mp3`, `ezan-dhuhr.mp3`, `ezan-asr.mp3`, `ezan-maghrib.mp3`, `ezan-isha.mp3` in `app/audio/` and run `npm run package`.
 - **After installing:** Dev Manager → **Files** → `/media/developer/apps/usr/palm/applications/com.noor.webos/audio/` → upload. (Lost on reinstall.)
