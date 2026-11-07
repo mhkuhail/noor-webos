@@ -3,6 +3,7 @@
 ## 1.9.0
 - **Iqamah alerts**: after each adhan the home screen counts down to the iqamah («إقامة العشاء بعد 12:30»), then shows a banner, plays a short tone and posts a TV notification (also over YouTube/Netflix via the background service).
 - Default intervals after the adhan: Fajr 22 · Dhuhr 17 · Asr 17 · Maghrib 7 · Isha 17 min (no iqamah alert for Jumu'ah). Each is adjustable in Settings (3–45 min); the alert and tone can be switched off.
+- The iqamah notification also appears while watching YouTube/Netflix (posted by Noor itself, or by the background service restarted by the TV's Activity Manager); it does not interrupt the video.
 - Emoji removed from notifications (webOS 4 has no emoji font).
 
 ## 1.8.0

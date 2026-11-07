@@ -112,7 +112,7 @@ function loop() {
       var mins = state.cfg.iqamah[k]; if (!mins) return;
       var at = t0[k].getTime() + mins * 60000; var key = new Date(at).toISOString().slice(0, 10) + ':iq:' + k;
       if (now >= at && now < at + 90000 && !state.done[key]) {
-        state.done[key] = 1; persist(); log('iqamah ' + k); toast('حان موعد إقامة صلاة ' + (NAMES[k] || k));
+        state.done[key] = 1; persist(); var alive = Object.keys(subs).length > 0; log('iqamah ' + k + (alive ? ' (Noor alive: it notifies)' : ' → toast')); if (!alive) toast('حان موعد إقامة صلاة ' + (NAMES[k] || k));
       }
     });
   }
@@ -189,14 +189,17 @@ function scheduleActivities() {
   var now = Date.now(); var list = [];
   [0, 1].forEach(function (d) { var t = timesFor(d); PRAYERS.forEach(function (k) {
     if (state.cfg.prayers && state.cfg.prayers.indexOf(k) < 0) return;
-    var at = t[k].getTime(); if (at - LEAD_MS > now + 5000) list.push({ k: k, at: at }); }); });
+    var at = t[k].getTime(); if (at - LEAD_MS > now + 5000) list.push({ k: k, at: at });
+    var fri = new Date(at + (state.cfg.tz == null ? 180 : state.cfg.tz) * 60000).getUTCDay() === 5;
+    var iq = state.cfg.iqamah && state.cfg.iqamah[k];
+    if (iq && !(k === 'dhuhr' && fri)) { var iat = at + iq * 60000; if (iat > now + 5000) list.push({ k: k, at: iat, iq: true }); } }); });
   list.forEach(function (it) {
-    var key = new Date(it.at).toISOString().slice(0, 10) + ':' + it.k;
+    var key = new Date(it.at).toISOString().slice(0, 10) + ':' + (it.iq ? 'iq:' : '') + it.k;
     if (state.sched[key]) return;
     var activity = { name: 'noor.adhan.' + key.replace(/[^0-9a-z]/gi, ''), description: 'Noor adhan ' + it.k,
       type: { foreground: true, persist: true },
-      schedule: { start: utcStamp(it.at - LEAD_MS), local: false },
-      callback: { method: 'luna://' + SERVICE_ID + '/wake', params: { prayer: it.k, at: it.at } } };
+      schedule: { start: utcStamp(it.iq ? it.at : it.at - LEAD_MS), local: false },
+      callback: { method: 'luna://' + SERVICE_ID + '/wake', params: { prayer: it.k, at: it.at, iqamah: !!it.iq } } };
     var i = 0;
     (function tryNext(lastErr) {
       if (i >= AM.length) { state.sched[key] = 'failed'; log('schedule ' + key + ' failed: ' + lastErr); persist(); return; }
@@ -209,10 +212,12 @@ function scheduleActivities() {
   var ks = Object.keys(state.sched); if (ks.length > 20) ks.slice(0, ks.length - 20).forEach(function (x) { delete state.sched[x]; });
 }
 service.register('wake', function (msg) {
-  var p = msg.payload || {}; var key = new Date(p.at).toISOString().slice(0, 10) + ':' + p.prayer;
-  log('wake from Activity Manager: ' + p.prayer);
+  var p = msg.payload || {}; var key = new Date(p.at).toISOString().slice(0, 10) + ':' + (p.iqamah ? 'iq:' : '') + p.prayer;
+  log('wake from Activity Manager: ' + (p.iqamah ? 'iqamah ' : '') + p.prayer);
   ensureRunning();
-  if (!state.done[key]) { state.done[key] = 1; persist(); doPrayer(p.prayer, p.at); }
+  if (!state.done[key]) { state.done[key] = 1; persist();
+    if (p.iqamah) { if (!Object.keys(subs).length) toast('حان موعد إقامة صلاة ' + (NAMES[p.prayer] || p.prayer)); }
+    else doPrayer(p.prayer, p.at); }
   if (p.$activity && p.$activity.activityId) luna('luna://com.webos.service.activitymanager/complete', { activityId: p.$activity.activityId }, function () {});
   msg.respond({ returnValue: true });
 });

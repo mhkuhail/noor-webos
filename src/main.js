@@ -285,7 +285,7 @@ let iqTimer = null;
 function fireIqamah(k) {
   const L = tr(); alog('iqamah ' + k + (document.hidden ? ' (Noor in background)' : ''));
   // the background service posts the TV notification; Noor posts it itself only if the service isn't reachable
-  if (!serviceOk) tvToast(L.iqamahNow + ' ' + L[k]);
+  if (document.hidden || !serviceOk) tvToast(L.iqamahNow + ' ' + L[k]);
   if (S.iqamahSound) { const a = $('iqamahAudio'); try { a.currentTime = 0; const p = a.play(); if (p && p.catch) p.catch(() => {}); } catch (e) { /* ignore */ } }
   const el = $('iqamahBanner'); $('iqamahText').textContent = L.iqamahNow + ' ' + L[k];
   el.classList.remove('hidden'); document.body.classList.add('iqOn'); clearTimeout(iqTimer); iqTimer = setTimeout(() => { el.classList.add('hidden'); document.body.classList.remove('iqOn'); }, 90000);
@@ -905,8 +905,9 @@ document.addEventListener('visibilitychange', () => {
   alog('Noor went to the background');
   // exact timer for the next pre-wake (setInterval may be throttled in the background)
   try { const t = timesFor(0), t1 = timesFor(1), now = Date.now(); let next = null;
-    ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].forEach((k) => { [t[k], t1[k]].forEach((d) => { const ms = d.getTime() - LEAD - now; if (ms > 0 && (next === null || ms < next)) next = ms; }); });
-    if (next !== null) hiddenTimer = setTimeout(() => tick(false), next + 500);
+    ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].forEach((k) => { [t[k], t1[k]].forEach((d) => {
+      [d.getTime() - LEAD, S.iqamah ? d.getTime() + (S.iq[k] || 0) * 60000 : 0].forEach((ts) => { const ms = ts - now; if (ms > 0 && (next === null || ms < next)) next = ms; }); }); });
+    if (next !== null) hiddenTimer = setTimeout(() => { tick(false); if (document.hidden) document.dispatchEvent(new Event('visibilitychange')); }, next + 500);
   } catch (e) { /* ignore */ }
 });
 
