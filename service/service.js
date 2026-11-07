@@ -71,8 +71,10 @@ function nextPrayer() {
 
 /* ---------- the prayer routine ---------- */
 var screenWasOff = false;
+var NAMES = { fajr: 'الفجر', dhuhr: 'الظهر', asr: 'العصر', maghrib: 'المغرب', isha: 'العشاء' };
 function doPrayer(prayer, at) {
   log('prayer ' + prayer + ' at ' + new Date(at).toISOString().slice(11, 16) + 'Z');
+  toast('🕌 يحين بعد دقيقة أذان ' + (NAMES[prayer] || prayer));
   powerState(function (e, ps) {
     screenWasOff = !!(ps && /screen ?off/i.test(ps));
     var go = function () {
@@ -121,22 +123,22 @@ function ensureRunning() {
   if (!keepAlive) {
     keepAlive = true;
     try {
-      service.activityManager.create('noor-keepalive', function (activity) { keepAlive = activity; log('keep-alive activity held'); });
+      service.activityManager.create('noor-keepalive', function (activity) { keepAlive = activity || true; log('keep-alive activity ' + (activity ? 'held' : 'not granted')); });
     } catch (e) { log('keep-alive failed: ' + e.message); }
   }
-  if (!timer) { timer = setInterval(loop, 10000); loop(); }
+  if (!timer) { timer = setInterval(loop, 10000); loop(); setInterval(scheduleActivities, 3 * 3600000); }
 }
 
 /* ---------- methods ---------- */
 service.register('start', function (msg) {
   var p = msg.payload || {};
   if (p.lat != null) state.cfg = { lat: p.lat, lng: p.lng, method: p.method, tz: p.tz, prayers: p.prayers, renew: p.renew };
-  persist(); ensureRunning(); loop();
+  persist(); ensureRunning(); loop(); scheduleActivities();
   var n = nextPrayer();
   msg.respond({ returnValue: true, running: true, next: n, lastRenew: state.lastRenew });
 });
 service.register('status', function (msg) {
-  msg.respond({ returnValue: true, running: !!timer, cfg: !!state.cfg, next: nextPrayer(), lastRenew: state.lastRenew, log: state.log.slice(-10) });
+  msg.respond({ returnValue: true, running: !!timer, cfg: !!state.cfg, next: nextPrayer(), lastRenew: state.lastRenew, sched: state.sched, subscribers: Object.keys(subs).length, log: state.log.slice(-15) });
 });
 function callWithTimeout(uri, params, ms, cb) {
   var done = false; var t = setTimeout(function () { if (!done) { done = true; cb('timeout'); } }, ms);
@@ -148,6 +150,60 @@ var LIST_METHODS = [
   ['luna://com.webos.applicationManager/listApps', {}],
   ['luna://com.webos.service.applicationManager/listApps', {}],
 ];
+/* ---------- notifications ---------- */
+function toast(message) {
+  luna('luna://com.webos.notification/createToast', { sourceId: APP_ID, message: message, noaction: false, onclick: { appId: APP_ID } }, function (e) {
+    if (e) log('toast failed: ' + e);
+  });
+}
+service.register('toast', function (msg) { toast((msg.payload || {}).message || 'Noor'); msg.respond({ returnValue: true }); });
+
+/* ---------- heartbeat: Noor keeps a subscription open so webOS doesn't stop this service ---------- */
+var subs = {};
+service.register('heartbeat', function (msg) {
+  if (msg.isSubscription) subs[msg.uniqueToken] = msg;
+  msg.respond({ returnValue: true, subscribed: !!msg.isSubscription, running: true });
+}, function (msg) { delete subs[msg.uniqueToken]; });
+
+/* ---------- persistent wake-ups via the system Activity Manager ----------
+   Even if webOS stops this service, the Activity Manager starts it again at T-60 s and calls /wake. */
+function pad2(n) { return (n < 10 ? '0' : '') + n; }
+function utcStamp(ms) { var d = new Date(ms); return d.getUTCFullYear() + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate()) + ' ' + pad2(d.getUTCHours()) + ':' + pad2(d.getUTCMinutes()) + ':' + pad2(d.getUTCSeconds()); }
+var AM = ['luna://com.webos.service.activitymanager/create', 'luna://com.palm.activitymanager/create'];
+state.sched = state.sched || {};
+function scheduleActivities() {
+  if (!state.cfg) return;
+  var now = Date.now(); var list = [];
+  [0, 1].forEach(function (d) { var t = timesFor(d); PRAYERS.forEach(function (k) {
+    if (state.cfg.prayers && state.cfg.prayers.indexOf(k) < 0) return;
+    var at = t[k].getTime(); if (at - LEAD_MS > now + 5000) list.push({ k: k, at: at }); }); });
+  list.forEach(function (it) {
+    var key = new Date(it.at).toISOString().slice(0, 10) + ':' + it.k;
+    if (state.sched[key]) return;
+    var activity = { name: 'noor.adhan.' + key.replace(/[^0-9a-z]/gi, ''), description: 'Noor adhan ' + it.k,
+      type: { foreground: true, persist: true },
+      schedule: { start: utcStamp(it.at - LEAD_MS), local: false },
+      callback: { method: 'luna://' + SERVICE_ID + '/wake', params: { prayer: it.k, at: it.at } } };
+    var i = 0;
+    (function tryNext(lastErr) {
+      if (i >= AM.length) { state.sched[key] = 'failed'; log('schedule ' + key + ' failed: ' + lastErr); persist(); return; }
+      callWithTimeout(AM[i++], { activity: activity, start: true, replace: true, subscribe: false }, 5000, function (e, r) {
+        if (e) return tryNext(e);
+        state.sched[key] = 'ok'; persist(); log('scheduled ' + key + ' (' + (r && r.activityId) + ')');
+      });
+    })();
+  });
+  var ks = Object.keys(state.sched); if (ks.length > 20) ks.slice(0, ks.length - 20).forEach(function (x) { delete state.sched[x]; });
+}
+service.register('wake', function (msg) {
+  var p = msg.payload || {}; var key = new Date(p.at).toISOString().slice(0, 10) + ':' + p.prayer;
+  log('wake from Activity Manager: ' + p.prayer);
+  ensureRunning();
+  if (!state.done[key]) { state.done[key] = 1; persist(); doPrayer(p.prayer, p.at); }
+  if (p.$activity && p.$activity.activityId) luna('luna://com.webos.service.activitymanager/complete', { activityId: p.$activity.activityId }, function () {});
+  msg.respond({ returnValue: true });
+});
+
 service.register('apps', function (msg) {
   var errors = [], i = 0;
   (function next() {

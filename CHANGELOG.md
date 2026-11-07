@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.8.0
+- **Adhan while watching YouTube/Netflix fixed.** Noor now:
+  - brings itself to the front one minute before the adhan when it is in the background (same permission used to open YouTube),
+  - shows a TV notification over the other app («يحين بعد دقيقة أذان …» / «حان الآن موعد أذان …»),
+  - registers every prayer with the TV's Activity Manager so the background service is restarted at T-60 s even if webOS stopped it,
+  - keeps a heartbeat subscription so webOS doesn't stop the service while Noor is alive.
+- New **Settings → Adhan service log** and two new capability-check rows (notification, system scheduling).
+
 ## 1.7.3
 - Wallpapers set from JavaScript — fixes missing backgrounds on webOS 4.x (Chromium 53 ignores `url()` in CSS variables).
 

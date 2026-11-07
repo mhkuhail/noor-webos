@@ -178,3 +178,4 @@ body.adhanOn #banners { display:none; }
 #night { position:absolute; top:0; left:0; right:0; bottom:0; z-index:8; background:#000; cursor:none; }
 #nightClock { position:absolute; font-size:64px; font-weight:300; color:rgba(255,255,255,.18); transform:translate(-50%,-50%); transition:left 2s, top 2s; }
 #nightHint { position:absolute; bottom:60px; left:0; right:0; text-align:center; font-size:28px; color:rgba(255,255,255,.45); direction:rtl; }
+.diag { font-family: Menlo, Consolas, monospace; font-size:22px; line-height:1.5; direction:ltr; text-align:left; white-space:pre-wrap; color:#e8f0ea; background:rgba(0,0,0,.45); padding:24px; border-radius:18px; }

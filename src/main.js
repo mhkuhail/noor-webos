@@ -35,6 +35,31 @@ function luna(uri, params, cb, ms) {
   } catch (e) { fin(String(e)); }
 }
 const SVC = 'luna://com.noor.webos.service/';
+const appLog = load('noor.applog', []);
+function alog(m) { appLog.push(new Date().toISOString().slice(5, 19).replace('T', ' ') + ' ' + m); while (appLog.length > 25) appLog.shift(); save('noor.applog', appLog); }
+function tvToast(message) {
+  luna('luna://com.webos.notification/createToast', { sourceId: 'com.noor.webos', message: message, noaction: false, onclick: { appId: 'com.noor.webos' } }, (e) => {
+    if (e) luna(SVC + 'toast', { message: message }, () => {});
+  }, 4000);
+}
+// Bring Noor in front of YouTube/Netflix/… (the same call that opens YouTube from Noor)
+function selfLaunch(params, cb) {
+  const p = { id: 'com.noor.webos', params: params };
+  luna('luna://com.webos.applicationManager/launch', p, (e) => {
+    if (!e) { alog('brought to front (app)'); return cb && cb(null); }
+    luna(SVC + 'launch', p, (e2) => { alog(e2 ? 'bring-to-front failed: ' + e + ' / ' + e2 : 'brought to front (service)'); if (cb) cb(e2); }, 6000);
+  }, 4000);
+}
+// A live subscription keeps webOS from stopping the background service while Noor is alive
+let hbBridge = null;
+function heartbeat() {
+  if (typeof window.PalmServiceBridge === 'undefined') return;
+  try {
+    hbBridge = new window.PalmServiceBridge();
+    hbBridge.onservicecallback = () => {};
+    hbBridge.call(SVC + 'heartbeat', JSON.stringify({ subscribe: true }));
+  } catch (e) { /* ignore */ }
+}
 function startService() {
   const c = city();
   luna(SVC + 'start', { lat: c.lat, lng: c.lng, method: c.method, tz: c.tz, renew: S.renewDev }, (err) => { serviceOk = !err; });
@@ -145,7 +170,7 @@ function setThemeClass() {
 }
 const toAr = (str) => (S.lang === 'ar' ? String(str).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]) : String(str));
 
-let lastMinute = -1;
+let lastMinute = -1; let wokeKey = ''; const LEAD = 60000;
 function tick(force) {
   const now = new Date(); const c = cityNow(now); const L = tr();
   // clock
@@ -163,7 +188,17 @@ function tick(force) {
   $('nextLine').innerHTML = escapeHtml(nm) + ' ' + L.after + ' <span class="cd">' + Math.floor(diff / 3600) + ':' + pad(Math.floor(diff / 60) % 60) + ':' + pad(diff % 60) + '</span>';
   $('greetText').textContent = isFri ? L.jumuahMubarak : L.salam;
 
-  // adhan trigger: within the first 90 seconds after a prayer time
+  // pre-wake: if Noor is behind another app, come to the front ~1 min before the adhan
+  for (const k of PRAYERS) {
+    if (k === 'sunrise' || !S.adhan) continue;
+    const dt = now - today[k]; const key = c.toISOString().slice(0, 10) + ':' + k;
+    if (dt >= -LEAD && dt < 120000 && wokeKey !== key && document.hidden) {
+      wokeKey = key; alog('pre-wake ' + k + ' (Noor was in the background)');
+      tvToast(L.toastSoon + ' ' + L[(k === 'dhuhr' && isFri) ? 'jumuah' : k]);
+      selfLaunch({ prayer: k, at: today[k].getTime(), source: 'self' });
+    }
+  }
+  // adhan trigger: within the first 3 minutes after a prayer time
   for (const k of PRAYERS) {
     if (k === 'sunrise') continue;
     const dt = now - today[k];
@@ -432,6 +467,7 @@ const ROWS = [
   { k: 'reOff', opts: [true, false], fmt: (v) => (v ? tr().on : tr().off) },
   { k: 'renewDev', opts: [true, false], fmt: (v) => (v ? tr().on : tr().off) },
   { k: 'caps', action: () => openCaps() },
+  { k: 'diag', action: () => openDiag() },
   { k: 'test', action: () => { closePanels(); showAdhan('dhuhr'); } },
   { k: 'exit', action: exitApp },
 ];
@@ -441,7 +477,7 @@ function renderSettings() {
   $('settingsTitle').textContent = L.settings; $('settingsHint').textContent = L.settingsHint;
   $('settingsBody').innerHTML = '<div id="setScroll">' + ROWS.map((r, i) =>
     '<div class="row' + (r.action ? ' action' : '') + (i === rowIdx ? ' focus' : '') + '" data-i="' + i + '"><span>' + (r.lbl ? r.lbl() + '<small class="pv">' + (previewRow === i ? L.previewing : (i === rowIdx ? L.preview : '')) + '</small>' : L[r.label || r.k]) + '</span>' +
-    '<span class="val">' + (r.action ? (r.k === 'test' ? '▶' : r.k === 'caps' ? '✓' : '⏻') : escapeHtml(r.fmt(r.p ? S.src[r.p] : S[r.k]))) + '</span></div>').join('') +
+    '<span class="val">' + (r.action ? (r.k === 'test' ? '▶' : r.k === 'caps' ? '✓' : r.k === 'diag' ? '☰' : '⏻') : escapeHtml(r.fmt(r.p ? S.src[r.p] : S[r.k]))) + '</span></div>').join('') +
     ezanStatusHtml() +
     '<div class="note">Noor for webOS · prayer times calculated on-device (adhan-js) · Umm al-Qura (Saudi) / Diyanet (Türkiye) · Quran text: alquran.cloud · Recitation: Badr Al-Turki (mp3quran.net) · Adhan: bundled recordings (optional streams: assabile.com) · Weather: Open-Meteo</div></div>';
   const rowEl = document.querySelectorAll('.row')[rowIdx], box = $('settingsBody'), inner = $('setScroll');
@@ -570,12 +606,32 @@ function focusApp() {
 }
 function launchSelected() { const a = appList[appIdx]; if (a) openApp([a.id]); }
 
+/* ================= service log (diagnostics) ================= */
+function openDiag() {
+  view = 'caps'; const L = tr();
+  $('readerTitle').textContent = L.diagTitle; $('readerHint').textContent = L.capsHint;
+  $('readerBody').innerHTML = '<div id="readerScroll"><pre id="diagPre" class="diag">' + L.loading + '</pre></div>';
+  show('reader');
+  luna(SVC + 'status', {}, (e, r) => {
+    const lines = [];
+    lines.push('Noor ' + (window.__noorVersion || '') + ' · bridge: ' + (typeof window.PalmServiceBridge !== 'undefined'));
+    if (e) lines.push('SERVICE: not reachable (' + e + ')');
+    else {
+      lines.push('SERVICE: running=' + r.running + ' cfg=' + r.cfg + ' subscribers=' + r.subscribers + ' next=' + (r.next ? r.next.prayer + ' ' + new Date(r.next.at).toISOString().slice(11, 16) + 'Z' : '-'));
+      lines.push('scheduled: ' + JSON.stringify(r.sched || {}));
+      lines.push('--- service log ---'); (r.log || []).forEach((x) => lines.push(x));
+    }
+    lines.push('--- app log ---'); appLog.slice(-15).forEach((x) => lines.push(x));
+    $('diagPre').textContent = lines.join('\n');
+  }, 6000);
+}
+
 /* ================= capability check ================= */
 let capLaunchSeen = false;
 function openCaps() {
   view = 'caps'; const L = tr();
   $('readerTitle').textContent = L.capsTitle; $('readerHint').textContent = L.capsHint;
-  const ids = ['bridge', 'service', 'power', 'screen', 'launch', 'devmode'];
+  const ids = ['bridge', 'service', 'power', 'screen', 'launch', 'toast', 'bg', 'devmode'];
   $('readerBody').innerHTML = '<div id="readerScroll">' + ids.map((k) => '<div class="row capRow" id="cap-' + k + '"><span>' + L['cap_' + k] + '</span><span class="cv">' + L.capRunning + '</span></div>').join('') + '<div class="note" id="capVerdict"></div></div>';
   show('reader');
   const res = {};
@@ -587,6 +643,11 @@ function openCaps() {
     (next) => luna('luna://com.webos.service.tvpower/power/getPowerState', {}, (e, r) => { set('power', !e, e || r.state); next(); }),
     (next) => screenOff((e, via) => { if (e) { set('screen', false, e); next(); return; } setTimeout(() => screenOn((e2) => { set('screen', !e2, e2 || (via === 'service' ? 'via service' : '')); next(); }), 3000); }),
     (next) => { capLaunchSeen = false; luna(SVC + 'test', { what: 'launch' }, (e) => { setTimeout(() => { set('launch', !e && capLaunchSeen, e || (capLaunchSeen ? '' : 'no relaunch')); next(); }, 2500); }); },
+    (next) => luna('luna://com.webos.notification/createToast', { sourceId: 'com.noor.webos', message: 'Noor ✓' }, (e) => {
+      if (!e) { set('toast', true); next(); return; }
+      luna(SVC + 'toast', { message: 'Noor ✓' }, (e2) => { set('toast', !e2, e2 ? e + ' / ' + e2 : 'via service'); next(); }, 6000); }, 4000),
+    (next) => setTimeout(() => luna(SVC + 'status', {}, (e, r) => { const sc = (r && r.sched) || {}; const vals = Object.keys(sc).map((k) => sc[k]);
+      set('bg', !e && vals.indexOf('ok') >= 0, e || (vals.length ? vals.join(',') : 'none')); next(); }, 6000), 1500),
     (next) => luna(SVC + 'test', { what: 'devmode' }, (e, r) => { set('devmode', !e && r.installed !== false, e); next(); }),
   ];
   let i = 0; const run = () => { if (view !== 'caps') return; if (i < steps.length) steps[i++](run); else { const all = ids.every((k) => res[k]); $('capVerdict').textContent = all ? L.capAllOk : (res.launch ? L.capNight : L.capSome); } };
@@ -624,6 +685,7 @@ function showAdhan(k) {
   const base = k === 'jumuah' ? 'dhuhr' : k;
   view = 'adhan'; document.body.classList.remove('dim');
   screenOn();
+  if (document.hidden) { alog('adhan ' + k + ' while hidden → bring to front'); tvToast(L.toastNow + ' ' + L[k]); selfLaunch({ prayer: base, at: Date.now(), source: 'adhan' }); }
   const q = qa(); if (!q.paused) q.pause();
   $('adhanSub').textContent = L.adhanSub; $('adhanName').textContent = L[k];
   ['reader', 'settings'].forEach((x) => $(x).classList.add('hidden')); document.body.classList.add('adhanOn');
@@ -784,6 +846,7 @@ document.addEventListener('webOSRelaunch', (ev) => { handleLaunch(ev.detail || r
 applyChrome();
 fetchWeather();
 startService();
+heartbeat();
 setInterval(startService, 30 * 60000);
 probeEzan();
 setInterval(playerTick, 1000);
@@ -792,7 +855,17 @@ setInterval(() => tick(false), 1000);
 setInterval(fetchWeather, 30 * 60000);
 setInterval(() => { if (view === 'home' && Date.now() > soonUntil + 30000) { const c = cityNow(); const h = hijri(); rotateReminder(timesFor(0), new Date(), c, h); } }, 20000);
 // Re-render when the TV wakes from standby (timers may have been paused)
-document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(true); });
+let hiddenTimer = null;
+document.addEventListener('visibilitychange', () => {
+  clearTimeout(hiddenTimer);
+  if (!document.hidden) { tick(true); return; }
+  alog('Noor went to the background');
+  // exact timer for the next pre-wake (setInterval may be throttled in the background)
+  try { const t = timesFor(0), t1 = timesFor(1), now = Date.now(); let next = null;
+    ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].forEach((k) => { [t[k], t1[k]].forEach((d) => { const ms = d.getTime() - LEAD - now; if (ms > 0 && (next === null || ms < next)) next = ms; }); });
+    if (next !== null) hiddenTimer = setTimeout(() => tick(false), next + 500);
+  } catch (e) { /* ignore */ }
+});
 
 // debug hooks for testing in a desktop browser
 setTimeout(() => handleLaunch(readLaunchParams()), 300);

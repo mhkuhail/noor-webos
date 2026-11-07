@@ -7,7 +7,7 @@
 │  ─────────────────────────────────────           (JS service, Node 8)        │
 │  • UI: home, dock, Quran, adhkar, settings       • keep-alive activity       │
 │  • prayer times (adhan-js), Hijri, reminders     • 10 s prayer loop          │
-│  • adhan player (bundled MP3 → stream → chime)   • T-60 s: turnOnScreen +    │
+│  • adhan player (bundled MP3 → stream → chime)   • T-60 s: toast, turnOnScreen,│
 │  • Quran player (mp3quran) + text (alquran)        launch Noor {prayer, at}  │
 │  • screen off / night mode, app launcher         • daily Developer Mode      │
 │  • capability check                                renewal (devmode extend)  │
@@ -50,6 +50,16 @@
 | Recitation | `server10.mp3quran.net/bader/Rewayat-Hafs-A-n-Assem/NNN.mp3` | browser cache |
 | Weather | `api.open-meteo.com` | 30 min |
 | Optional adhan streams | `assabile.com` | — |
+
+## Getting the adhan over other apps (1.8.0)
+
+Three independent paths, any one is enough:
+1. **App self-wake** — while hidden, Noor's own timer fires at T-60 s, shows a toast and relaunches itself
+   (`applicationManager/launch`, the same call used to open YouTube).
+2. **Service loop + heartbeat** — Noor holds a subscription to `/heartbeat`, which keeps the service alive; its
+   10 s loop launches Noor at T-60 s.
+3. **Activity Manager** — each prayer is registered as a persistent scheduled activity whose callback
+   (`/wake`) restarts the service if webOS stopped it.
 
 ## Launch parameters
 
