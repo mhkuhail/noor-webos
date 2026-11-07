@@ -2,10 +2,75 @@
 // fetched from api.alquran.cloud (Uthmani script) and cached on the TV, so
 // every ayah shown comes from a verified Mushaf source.
 
-export const CITIES = {
-  riyadh:   { ar: 'الرياض',  en: 'Riyadh',   lat: 24.7136, lng: 46.6753, tz: 180, method: 'UmmAlQura' },
-  istanbul: { ar: 'إسطنبول', en: 'Istanbul', lat: 41.0082, lng: 28.9784, tz: 180, method: 'Turkey' },
-  makkah:   { ar: 'مكة المكرمة', en: 'Makkah', lat: 21.4225, lng: 39.8262, tz: 180, method: 'UmmAlQura' },
+// Countries and cities. tz = fixed UTC offset in minutes for countries without daylight saving;
+// tz: 'tv' = follow the TV's own time zone (countries with daylight saving).
+// method = official/most-used calculation method (adhan-js CalculationMethod name).
+export const COUNTRIES = {
+  sa: { ar: 'السعودية', en: 'Saudi Arabia' }, tr: { ar: 'تركيا', en: 'Türkiye' }, ae: { ar: 'الإمارات', en: 'UAE' },
+  kw: { ar: 'الكويت', en: 'Kuwait' }, qa: { ar: 'قطر', en: 'Qatar' }, bh: { ar: 'البحرين', en: 'Bahrain' }, om: { ar: 'عُمان', en: 'Oman' },
+  jo: { ar: 'الأردن', en: 'Jordan' }, iq: { ar: 'العراق', en: 'Iraq' }, ye: { ar: 'اليمن', en: 'Yemen' }, sy: { ar: 'سوريا', en: 'Syria' },
+  ps: { ar: 'فلسطين', en: 'Palestine' }, lb: { ar: 'لبنان', en: 'Lebanon' }, eg: { ar: 'مصر', en: 'Egypt' },
+  pk: { ar: 'باكستان', en: 'Pakistan' }, my: { ar: 'ماليزيا', en: 'Malaysia' }, id: { ar: 'إندونيسيا', en: 'Indonesia' },
+  gb: { ar: 'بريطانيا', en: 'United Kingdom' }, de: { ar: 'ألمانيا', en: 'Germany' },
+};
+function c(country, key, ar, en, lat, lng, tz, method) { return [key, { country: country, ar: ar, en: en, lat: lat, lng: lng, tz: tz, method: method }]; }
+export const CITIES = Object.assign({}, ...[
+  c('sa', 'riyadh', 'الرياض', 'Riyadh', 24.7136, 46.6753, 180, 'UmmAlQura'),
+  c('sa', 'makkah', 'مكة المكرمة', 'Makkah', 21.4225, 39.8262, 180, 'UmmAlQura'),
+  c('sa', 'madinah', 'المدينة المنورة', 'Madinah', 24.4672, 39.6111, 180, 'UmmAlQura'),
+  c('sa', 'jeddah', 'جدة', 'Jeddah', 21.5433, 39.1728, 180, 'UmmAlQura'),
+  c('sa', 'dammam', 'الدمام', 'Dammam', 26.4207, 50.0888, 180, 'UmmAlQura'),
+  c('sa', 'khobar', 'الخبر', 'Al Khobar', 26.2172, 50.1971, 180, 'UmmAlQura'),
+  c('sa', 'jubail', 'الجبيل', 'Jubail', 27.0046, 49.6460, 180, 'UmmAlQura'),
+  c('sa', 'ahsa', 'الأحساء', 'Al-Ahsa', 25.3830, 49.5866, 180, 'UmmAlQura'),
+  c('sa', 'taif', 'الطائف', 'Taif', 21.2703, 40.4158, 180, 'UmmAlQura'),
+  c('sa', 'abha', 'أبها', 'Abha', 18.2164, 42.5053, 180, 'UmmAlQura'),
+  c('sa', 'tabuk', 'تبوك', 'Tabuk', 28.3838, 36.5550, 180, 'UmmAlQura'),
+  c('sa', 'buraidah', 'بريدة', 'Buraidah', 26.3260, 43.9750, 180, 'UmmAlQura'),
+  c('sa', 'hail', 'حائل', 'Hail', 27.5114, 41.6900, 180, 'UmmAlQura'),
+  c('sa', 'jazan', 'جازان', 'Jazan', 16.8892, 42.5511, 180, 'UmmAlQura'),
+  c('sa', 'najran', 'نجران', 'Najran', 17.4924, 44.1277, 180, 'UmmAlQura'),
+  c('sa', 'yanbu', 'ينبع', 'Yanbu', 24.0895, 38.0618, 180, 'UmmAlQura'),
+  c('tr', 'istanbul', 'إسطنبول', 'Istanbul', 41.0082, 28.9784, 180, 'Turkey'),
+  c('tr', 'ankara', 'أنقرة', 'Ankara', 39.9334, 32.8597, 180, 'Turkey'),
+  c('tr', 'izmir', 'إزمير', 'İzmir', 38.4237, 27.1428, 180, 'Turkey'),
+  c('tr', 'bursa', 'بورصة', 'Bursa', 40.1885, 29.0610, 180, 'Turkey'),
+  c('tr', 'antalya', 'أنطاليا', 'Antalya', 36.8969, 30.7133, 180, 'Turkey'),
+  c('tr', 'konya', 'قونية', 'Konya', 37.8746, 32.4932, 180, 'Turkey'),
+  c('tr', 'trabzon', 'طرابزون', 'Trabzon', 41.0027, 39.7168, 180, 'Turkey'),
+  c('tr', 'gaziantep', 'غازي عنتاب', 'Gaziantep', 37.0662, 37.3833, 180, 'Turkey'),
+  c('tr', 'sakarya', 'صقاريا', 'Sakarya', 40.7569, 30.3783, 180, 'Turkey'),
+  c('ae', 'dubai', 'دبي', 'Dubai', 25.2048, 55.2708, 240, 'Dubai'),
+  c('ae', 'abudhabi', 'أبوظبي', 'Abu Dhabi', 24.4539, 54.3773, 240, 'Dubai'),
+  c('ae', 'sharjah', 'الشارقة', 'Sharjah', 25.3463, 55.4209, 240, 'Dubai'),
+  c('ae', 'alain', 'العين', 'Al Ain', 24.2075, 55.7447, 240, 'Dubai'),
+  c('kw', 'kuwait', 'مدينة الكويت', 'Kuwait City', 29.3759, 47.9774, 180, 'Kuwait'),
+  c('qa', 'doha', 'الدوحة', 'Doha', 25.2854, 51.5310, 180, 'Qatar'),
+  c('bh', 'manama', 'المنامة', 'Manama', 26.2235, 50.5876, 180, 'UmmAlQura'),
+  c('om', 'muscat', 'مسقط', 'Muscat', 23.5880, 58.3829, 240, 'MuslimWorldLeague'),
+  c('jo', 'amman', 'عمّان', 'Amman', 31.9539, 35.9106, 180, 'MuslimWorldLeague'),
+  c('iq', 'baghdad', 'بغداد', 'Baghdad', 33.3152, 44.3661, 180, 'MuslimWorldLeague'),
+  c('iq', 'erbil', 'أربيل', 'Erbil', 36.1911, 44.0092, 180, 'MuslimWorldLeague'),
+  c('ye', 'sanaa', 'صنعاء', "Sana'a", 15.3694, 44.1910, 180, 'MuslimWorldLeague'),
+  c('sy', 'damascus', 'دمشق', 'Damascus', 33.5138, 36.2765, 180, 'MuslimWorldLeague'),
+  c('ps', 'quds', 'القدس', 'Al-Quds', 31.7767, 35.2345, 'tv', 'MuslimWorldLeague'),
+  c('ps', 'gaza', 'غزة', 'Gaza', 31.5017, 34.4668, 'tv', 'MuslimWorldLeague'),
+  c('lb', 'beirut', 'بيروت', 'Beirut', 33.8938, 35.5018, 'tv', 'MuslimWorldLeague'),
+  c('eg', 'cairo', 'القاهرة', 'Cairo', 30.0444, 31.2357, 'tv', 'Egyptian'),
+  c('eg', 'alexandria', 'الإسكندرية', 'Alexandria', 31.2001, 29.9187, 'tv', 'Egyptian'),
+  c('pk', 'karachi', 'كراتشي', 'Karachi', 24.8607, 67.0011, 300, 'Karachi'),
+  c('pk', 'lahore', 'لاهور', 'Lahore', 31.5204, 74.3587, 300, 'Karachi'),
+  c('my', 'kualalumpur', 'كوالالمبور', 'Kuala Lumpur', 3.1390, 101.6869, 480, 'Singapore'),
+  c('id', 'jakarta', 'جاكرتا', 'Jakarta', -6.2088, 106.8456, 420, 'Singapore'),
+  c('gb', 'london', 'لندن', 'London', 51.5074, -0.1278, 'tv', 'MoonsightingCommittee'),
+  c('de', 'berlin', 'برلين', 'Berlin', 52.5200, 13.4050, 'tv', 'MuslimWorldLeague'),
+].map((x) => ({ [x[0]]: x[1] })));
+export const METHODS = {
+  UmmAlQura: { ar: 'أم القرى', en: 'Umm al-Qura' }, Turkey: { ar: 'ديانت (تركيا)', en: 'Diyanet (Türkiye)' },
+  MuslimWorldLeague: { ar: 'رابطة العالم الإسلامي', en: 'Muslim World League' }, Egyptian: { ar: 'الهيئة المصرية', en: 'Egyptian Authority' },
+  Dubai: { ar: 'دبي', en: 'Dubai' }, Kuwait: { ar: 'الكويت', en: 'Kuwait' }, Qatar: { ar: 'قطر', en: 'Qatar' },
+  Karachi: { ar: 'كراتشي', en: 'Karachi' }, Singapore: { ar: 'سنغافورة / ماليزيا', en: 'Singapore / Malaysia' },
+  MoonsightingCommittee: { ar: 'لجنة رؤية الهلال', en: 'Moonsighting Committee' },
 };
 
 export const PRAYERS = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
@@ -31,7 +96,7 @@ export const T = {
     on: 'تشغيل', off: 'إيقاف', h24: '24 ساعة', h12: '12 ساعة', days: 'يوم', run: 'تشغيل',
     themes: { zakhrafa: 'زخرفة', masjid: 'مسجد الليل', awqat: 'أوقات اليوم' }, after: 'بعد', jumuahMubarak: 'جمعة مباركة', salam: 'السلام عليكم', adhkarSub: 'حصن المسلم',
     adhanSub: 'حان الآن موعد أذان', adhanSoon: 'يحين بعد دقيقة أذان',
-    apps: 'التطبيقات', appsSub: 'كل تطبيقات التلفاز', youtube: 'YouTube', youtubeSub: 'يوتيوب', appsHint: '◀▶▲▼ للتنقل · OK للفتح · رجوع للعودة', appsFail: 'تعذّر قراءة قائمة التطبيقات', openFail: 'تعذّر فتح التطبيق', iqamahIn: 'إقامة', iqamahNow: 'حان موعد إقامة صلاة', iqamahOn: 'تنبيه الإقامة', iqamahSound: 'صوت تنبيه عند الإقامة', iqamahFor: 'الإقامة بعد أذان', minWord: 'دقيقة', diag: 'سجل خدمة الأذان', diagTitle: 'سجل خدمة الأذان', toastSoon: 'يحين بعد دقيقة أذان', toastNow: 'حان الآن موعد أذان', cap_toast: 'إشعار فوق التطبيقات الأخرى', cap_bg: 'جدولة الأذان في نظام التلفاز', screenoff: 'إطفاء الشاشة', screenoffSub: 'ويبقى الأذان يعمل', screenOffFail: 'لم يسمح التلفاز بإطفاء الشاشة — افتح فحص القدرات من الإعدادات', nightHint: 'وضع الليل — اضغط أي زر للعودة · سيُرفع الأذان في وقته', cap_screenSvc: 'إطفاء الشاشة عبر الخدمة الخلفية', capNight: 'إن لم يُسمح بإطفاء الشاشة: يستخدم نور «وضع الليل» (شاشة سوداء) ويُرفع الأذان في وقته دون أي صلاحية.',
+    apps: 'التطبيقات', appsSub: 'كل تطبيقات التلفاز', youtube: 'YouTube', youtubeSub: 'يوتيوب', appsHint: '◀▶▲▼ للتنقل · OK للفتح · رجوع للعودة', appsFail: 'تعذّر قراءة قائمة التطبيقات', openFail: 'تعذّر فتح التطبيق', country: 'الدولة', method: 'طريقة الحساب', methodAuto: 'تلقائي', secCity: 'المدينة والمواقيت', secAdhan: 'الأذان', secIqamah: 'الإقامة', secDisplay: 'المظهر واللغة', secQuran: 'القرآن الكريم', secSystem: 'النظام والدعم', secHint: '▲▼ للتنقل · OK للفتح · رجوع للخروج', tvTz: 'توقيت التلفاز', iqamahIn: 'إقامة', iqamahNow: 'حان موعد إقامة صلاة', iqamahOn: 'تنبيه الإقامة', iqamahSound: 'صوت تنبيه عند الإقامة', iqamahFor: 'الإقامة بعد أذان', minWord: 'دقيقة', diag: 'سجل خدمة الأذان', diagTitle: 'سجل خدمة الأذان', toastSoon: 'يحين بعد دقيقة أذان', toastNow: 'حان الآن موعد أذان', cap_toast: 'إشعار فوق التطبيقات الأخرى', cap_bg: 'جدولة الأذان في نظام التلفاز', screenoff: 'إطفاء الشاشة', screenoffSub: 'ويبقى الأذان يعمل', screenOffFail: 'لم يسمح التلفاز بإطفاء الشاشة — افتح فحص القدرات من الإعدادات', nightHint: 'وضع الليل — اضغط أي زر للعودة · سيُرفع الأذان في وقته', cap_screenSvc: 'إطفاء الشاشة عبر الخدمة الخلفية', capNight: 'إن لم يُسمح بإطفاء الشاشة: يستخدم نور «وضع الليل» (شاشة سوداء) ويُرفع الأذان في وقته دون أي صلاحية.',
     reOff: 'إعادة إطفاء الشاشة بعد الأذان', renewDev: 'تجديد وضع المطوّر تلقائيًا', caps: 'فحص قدرات التلفاز', capsHint: 'رجوع للعودة',
     capsTitle: 'فحص قدرات التلفاز', capRunning: 'جارِ الفحص…', capOk: 'يعمل', capNo: 'غير مسموح',
     cap_bridge: 'الاتصال بنظام التلفاز', cap_service: 'خدمة نور الخلفية', cap_power: 'قراءة حالة الشاشة', cap_screen: 'إطفاء وتشغيل الشاشة (ستنطفئ 3 ثوانٍ)',
@@ -74,7 +139,7 @@ export const T = {
     on: 'On', off: 'Off', h24: '24-hour', h12: '12-hour', days: 'days', run: 'Run',
     themes: { zakhrafa: 'Zakhrafa', masjid: 'Masjid at night', awqat: 'Times of day' }, after: 'in', jumuahMubarak: "Jumu'ah Mubarak", salam: 'Assalamu alaikum', adhkarSub: 'Hisn al-Muslim',
     adhanSub: 'It is now time for', adhanSoon: 'In one minute: adhan of',
-    apps: 'Apps', appsSub: 'All TV apps', youtube: 'YouTube', youtubeSub: 'YouTube', appsHint: '◀▶▲▼ move · OK open · Back to return', appsFail: 'Could not read the app list', openFail: 'Could not open the app', iqamahIn: 'Iqamah of', iqamahNow: 'Iqamah time for', iqamahOn: 'Iqamah alert', iqamahSound: 'Tone at iqamah', iqamahFor: 'Iqamah after adhan:', minWord: 'min', diag: 'Adhan service log', diagTitle: 'Adhan service log', toastSoon: 'In one minute: adhan of', toastNow: 'It is now time for the adhan of', cap_toast: 'Notification over other apps', cap_bg: 'Adhan scheduled in the TV system', screenoff: 'Screen off', screenoffSub: 'adhan stays on', screenOffFail: 'The TV did not allow turning the screen off — run the capability check in Settings', nightHint: 'Night mode — press any key to return · the adhan will still play on time', cap_screenSvc: 'Screen off via background service', capNight: 'If screen-off is not allowed, Noor uses Night mode (black screen) and the adhan still plays on time with no special permission.',
+    apps: 'Apps', appsSub: 'All TV apps', youtube: 'YouTube', youtubeSub: 'YouTube', appsHint: '◀▶▲▼ move · OK open · Back to return', appsFail: 'Could not read the app list', openFail: 'Could not open the app', country: 'Country', method: 'Calculation method', methodAuto: 'Automatic', secCity: 'City & prayer times', secAdhan: 'Adhan', secIqamah: 'Iqamah', secDisplay: 'Display & language', secQuran: 'Holy Quran', secSystem: 'System & support', secHint: '▲▼ move · OK open · Back to close', tvTz: 'TV time zone', iqamahIn: 'Iqamah of', iqamahNow: 'Iqamah time for', iqamahOn: 'Iqamah alert', iqamahSound: 'Tone at iqamah', iqamahFor: 'Iqamah after adhan:', minWord: 'min', diag: 'Adhan service log', diagTitle: 'Adhan service log', toastSoon: 'In one minute: adhan of', toastNow: 'It is now time for the adhan of', cap_toast: 'Notification over other apps', cap_bg: 'Adhan scheduled in the TV system', screenoff: 'Screen off', screenoffSub: 'adhan stays on', screenOffFail: 'The TV did not allow turning the screen off — run the capability check in Settings', nightHint: 'Night mode — press any key to return · the adhan will still play on time', cap_screenSvc: 'Screen off via background service', capNight: 'If screen-off is not allowed, Noor uses Night mode (black screen) and the adhan still plays on time with no special permission.',
     reOff: 'Turn the screen off again after the adhan', renewDev: 'Renew Developer Mode automatically', caps: 'TV capability check', capsHint: 'Back to return',
     capsTitle: 'TV capability check', capRunning: 'Checking…', capOk: 'works', capNo: 'not allowed',
     cap_bridge: 'Access to the TV system', cap_service: 'Noor background service', cap_power: 'Read screen state', cap_screen: 'Screen off / on (screen goes dark for 3 s)',

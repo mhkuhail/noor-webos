@@ -1,8 +1,9 @@
 import { Coordinates, CalculationMethod, PrayerTimes } from 'adhan';
-import { CITIES, PRAYERS, T, ADHKAR, RECITER_URL, EZAN_FILES, ADHAN_SOURCES } from './content.js';
+import { CITIES, COUNTRIES, METHODS, PRAYERS, T, ADHKAR, RECITER_URL, EZAN_FILES, ADHAN_SOURCES } from './content.js';
 
 /* ================= state & storage ================= */
-const DEFAULTS = { iqamah: true, iqamahSound: true, iq: { fajr: 22, dhuhr: 17, asr: 17, maghrib: 7, isha: 17 }, reOff: true, renewDev: true, city: 'riyadh', lang: 'ar', theme: 'zakhrafa', h12: false, adhan: true, hijriAdj: 0, oled: true, adhanStyle: 'turkish', continuous: true, follow: true,
+const NOOR_VERSION = typeof __NOOR_VERSION__ !== 'undefined' ? __NOOR_VERSION__ : '';
+const DEFAULTS = { method: 'auto', iqamah: true, iqamahSound: true, iq: { fajr: 22, dhuhr: 17, asr: 17, maghrib: 7, isha: 17 }, reOff: true, renewDev: true, city: 'riyadh', lang: 'ar', theme: 'zakhrafa', h12: false, adhan: true, hijriAdj: 0, oled: true, adhanStyle: 'turkish', continuous: true, follow: true,
   src: { fajr: 'local', dhuhr: 'local', asr: 'local', maghrib: 'local', isha: 'local' } };
 function load(key, def) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch (e) { return def; } }
 function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { /* storage full or unavailable */ } }
@@ -14,6 +15,7 @@ S.iq = Object.assign({}, DEFAULTS.iq, S.iq || {});
 if (load('noor.ver', 0) < 13) { S.src = Object.assign({}, DEFAULTS.src); S.theme = 'masjid'; save('noor.ver', 13); save('noor.settings', S); }
 if (load('noor.ver', 0) < 14) { S.theme = 'zakhrafa'; save('noor.ver', 14); save('noor.settings', S); }
 if (['zakhrafa', 'masjid', 'awqat'].indexOf(S.theme) < 0) S.theme = 'zakhrafa';
+if (!CITIES[S.city]) S.city = 'riyadh';
 let firedKey = load('noor.fired', '');
 let view = 'home';           // home | index | player | dhikr | settings | adhan
 let menuIdx = 0, rowIdx = 0, dhikrIdx = 0, scrollY = 0;
@@ -21,7 +23,11 @@ let weather = null, reminderIdx = 0;
 
 const $ = (id) => document.getElementById(id);
 const tr = () => T[S.lang];
-const city = () => CITIES[S.city];
+// Effective city: tz resolved ('tv' → the TV's current UTC offset, follows daylight saving) + optional method override
+const city = () => {
+  const c = CITIES[S.city] || CITIES.riyadh;
+  return Object.assign({}, c, { tz: c.tz === 'tv' ? -new Date().getTimezoneOffset() : c.tz, method: S.method && S.method !== 'auto' ? S.method : c.method });
+};
 
 /* ================= webOS system calls (PalmServiceBridge = what webOSTV.js uses internally) ================= */
 function luna(uri, params, cb, ms) {
@@ -37,7 +43,7 @@ function luna(uri, params, cb, ms) {
 }
 const SVC = 'luna://com.noor.webos.service/';
 const appLog = load('noor.applog', []);
-function alog(m) { appLog.push(new Date().toISOString().slice(5, 19).replace('T', ' ') + ' ' + m); while (appLog.length > 25) appLog.shift(); save('noor.applog', appLog); }
+function alog(m) { appLog.push(new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(5, 19).replace('T', ' ') + ' ' + m); while (appLog.length > 25) appLog.shift(); save('noor.applog', appLog); }
 function tvToast(message) {
   luna('luna://com.webos.notification/createToast', { sourceId: 'com.noor.webos', message: message, noaction: false, onclick: { appId: 'com.noor.webos' } }, (e) => {
     if (e) luna(SVC + 'toast', { message: message }, () => {});
@@ -482,54 +488,98 @@ function countDhikr() {
 }
 
 /* ================= settings ================= */
+const onOff = (v) => (v ? tr().on : tr().off);
+const countryOf = () => (CITIES[S.city] || CITIES.riyadh).country;
 const ROWS = [
-  { k: 'city', opts: Object.keys(CITIES), fmt: (v) => CITIES[v][S.lang] },
-  { k: 'lang', opts: ['ar', 'en'], fmt: (v) => (v === 'ar' ? 'العربية' : 'English') },
-  { k: 'theme', opts: ['zakhrafa', 'masjid', 'awqat'], fmt: (v) => tr().themes[v] },
-  { k: 'h12', label: 'clock', opts: [false, true], fmt: (v) => (v ? tr().h12 : tr().h24) },
-  { k: 'adhan', label: 'adhanOn', opts: [true, false], fmt: (v) => (v ? tr().on : tr().off) },
+  // City & prayer times
+  { sec: 'city', k: 'country', label: 'country', get: countryOf, opts: () => Object.keys(COUNTRIES), fmt: (v) => COUNTRIES[v][S.lang],
+    set: (v) => { S.city = Object.keys(CITIES).filter((k) => CITIES[k].country === v)[0]; } },
+  { sec: 'city', k: 'city', opts: () => Object.keys(CITIES).filter((k) => CITIES[k].country === countryOf()), fmt: (v) => CITIES[v][S.lang] },
+  { sec: 'city', k: 'method', opts: () => ['auto'].concat(Object.keys(METHODS)),
+    fmt: (v) => (v === 'auto' ? tr().methodAuto + ' — ' + METHODS[(CITIES[S.city] || CITIES.riyadh).method][S.lang] : METHODS[v][S.lang]) },
+  { sec: 'city', k: 'hijriAdj', opts: [-2, -1, 0, 1, 2], fmt: (v) => (v > 0 ? '+' : '') + v + ' ' + tr().days },
+  { sec: 'city', k: 'h12', label: 'clock', opts: [false, true], fmt: (v) => (v ? tr().h12 : tr().h24) },
+  // Adhan
+  { sec: 'adhan', k: 'adhan', label: 'adhanOn', opts: [true, false], fmt: onOff },
   ...['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].map((p) => ({
-    k: 'src', p: p, opts: ADHAN_SOURCES.map((x) => x.id),
+    sec: 'adhan', k: 'src', p: p, opts: ADHAN_SOURCES.map((x) => x.id),
     lbl: () => tr().adhanFor + ' ' + tr()[p] + ' · ' + tr().maqamWord + ' ' + tr().maqam[p],
     fmt: (v) => { const x = ADHAN_SOURCES.filter((o) => o.id === v)[0]; return x ? x[S.lang] : v; },
   })),
-  { k: 'continuous', opts: [true, false], fmt: (v) => (v ? tr().on : tr().off) },
-  { k: 'follow', opts: [true, false], fmt: (v) => (v ? tr().on : tr().off) },
-  { k: 'hijriAdj', opts: [-2, -1, 0, 1, 2], fmt: (v) => (v > 0 ? '+' : '') + v + ' ' + tr().days },
-  { k: 'oled', opts: [true, false], fmt: (v) => (v ? tr().on : tr().off) },
-  { k: 'iqamah', label: 'iqamahOn', opts: [true, false], fmt: (v) => (v ? tr().on : tr().off) },
-  ...['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].map((p) => ({ k: 'iq', p: p, iq: true, opts: [3, 5, 7, 10, 12, 15, 17, 20, 22, 25, 30, 35, 40, 45],
+  { sec: 'adhan', k: 'reOff', opts: [true, false], fmt: onOff },
+  { sec: 'adhan', k: 'test', action: () => { closePanels(); showAdhan('dhuhr'); } },
+  // Iqamah
+  { sec: 'iqamah', k: 'iqamah', label: 'iqamahOn', opts: [true, false], fmt: onOff },
+  ...['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].map((p) => ({ sec: 'iqamah', k: 'iq', p: p, iq: true, opts: [3, 5, 7, 10, 12, 15, 17, 20, 22, 25, 30, 35, 40, 45],
     lbl: () => tr().iqamahFor + ' ' + tr()[p], fmt: (v) => v + ' ' + tr().minWord })),
-  { k: 'iqamahSound', opts: [true, false], fmt: (v) => (v ? tr().on : tr().off) },
-  { k: 'reOff', opts: [true, false], fmt: (v) => (v ? tr().on : tr().off) },
-  { k: 'renewDev', opts: [true, false], fmt: (v) => (v ? tr().on : tr().off) },
-  { k: 'caps', action: () => openCaps() },
-  { k: 'diag', action: () => openDiag() },
-  { k: 'test', action: () => { closePanels(); showAdhan('dhuhr'); } },
-  { k: 'exit', action: exitApp },
+  { sec: 'iqamah', k: 'iqamahSound', opts: [true, false], fmt: onOff },
+  // Display & language
+  { sec: 'display', k: 'lang', opts: ['ar', 'en'], fmt: (v) => (v === 'ar' ? 'العربية' : 'English') },
+  { sec: 'display', k: 'theme', opts: ['zakhrafa', 'masjid', 'awqat'], fmt: (v) => tr().themes[v] },
+  { sec: 'display', k: 'oled', opts: [true, false], fmt: onOff },
+  // Quran
+  { sec: 'quran', k: 'continuous', opts: [true, false], fmt: onOff },
+  { sec: 'quran', k: 'follow', opts: [true, false], fmt: onOff },
+  // System & support
+  { sec: 'system', k: 'renewDev', opts: [true, false], fmt: onOff },
+  { sec: 'system', k: 'caps', action: () => openCaps() },
+  { sec: 'system', k: 'diag', action: () => openDiag() },
+  { sec: 'system', k: 'exit', action: exitApp },
 ];
-function openSettings() { view = 'settings'; rowIdx = 0; renderSettings(); show('settings'); }
+const ICON = {
+  city: 'M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z',
+  adhan: 'M12 3c2.5 2 4.5 3.6 4.5 6.2H7.5C7.5 6.6 9.5 5 12 3ZM6 10h12v10H6zM2.5 8h2v12h-2zM19.5 8h2v12h-2zM10.5 14a1.5 1.5 0 0 1 3 0v6h-3z',
+  iqamah: 'M12 22a2.5 2.5 0 0 0 2.5-2.5h-5A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.5-6.8V3.5a1.5 1.5 0 0 0-3 0v.7A7 7 0 0 0 5 11v5l-2 2v1h18v-1z',
+  display: 'M12 3a9 9 0 0 0 0 18c1 0 1.5-.7 1.5-1.5 0-.4-.2-.8-.4-1-.3-.3-.4-.6-.4-1 0-.8.7-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-4.4-4-8-9-8ZM6.5 12a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm3-4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm3 4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z',
+  quran: 'M4 4.5A2.5 2.5 0 0 1 6.5 2H20v16H6.5a1.5 1.5 0 0 0 0 3H20v1H6.5A2.5 2.5 0 0 1 4 19.5z',
+  system: 'M19.14 12.94a7 7 0 0 0 0-1.88l2.03-1.58-1.92-3.32-2.39.96a7 7 0 0 0-1.62-.94L14.88 3.5h-3.84l-.36 2.68c-.59.24-1.13.57-1.62.94l-2.39-.96-1.92 3.32 2.03 1.58a7 7 0 0 0 0 1.88l-2.03 1.58 1.92 3.32 2.39-.96c.5.38 1.03.7 1.62.94l.36 2.68h3.84l.36-2.68c.59-.24 1.13-.56 1.62-.94l2.39.96 1.92-3.32zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z',
+};
+const SECTIONS = [
+  { id: 'city', title: 'secCity', sum: () => city()[S.lang] + ' · ' + METHODS[city().method][S.lang] },
+  { id: 'adhan', title: 'secAdhan', sum: () => (S.adhan ? tr().on : tr().off) + ' · ' + tr().reciter },
+  { id: 'iqamah', title: 'secIqamah', sum: () => (S.iqamah ? ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].map((p) => tr()[p] + ' ' + S.iq[p]).join(' · ') : tr().off) },
+  { id: 'display', title: 'secDisplay', sum: () => tr().themes[S.theme] + ' · ' + (S.lang === 'ar' ? 'العربية' : 'English') },
+  { id: 'quran', title: 'secQuran', sum: () => tr().reciter },
+  { id: 'system', title: 'secSystem', sum: () => 'Noor ' + NOOR_VERSION },
+];
+let settingsSec = null;
+const VR = () => (settingsSec ? ROWS.filter((r) => r.sec === settingsSec) : []);
+const rowVal = (r) => (r.get ? r.get() : r.iq ? S.iq[r.p] : r.p ? S.src[r.p] : S[r.k]);
+const rowOpts = (r) => (typeof r.opts === 'function' ? r.opts() : r.opts);
+function openSettings() { view = 'settings'; settingsSec = null; rowIdx = 0; renderSettings(); show('settings'); }
 function renderSettings() {
   const L = tr();
-  $('settingsTitle').textContent = L.settings; $('settingsHint').textContent = L.settingsHint;
-  $('settingsBody').innerHTML = '<div id="setScroll">' + ROWS.map((r, i) =>
-    '<div class="row' + (r.action ? ' action' : '') + (i === rowIdx ? ' focus' : '') + '" data-i="' + i + '"><span>' + (r.lbl ? r.lbl() + (r.iq ? '' : '<small class="pv">' + (previewRow === i ? L.previewing : (i === rowIdx ? L.preview : '')) + '</small>') : L[r.label || r.k]) + '</span>' +
-    '<span class="val">' + (r.action ? (r.k === 'test' ? '▶' : r.k === 'caps' ? '✓' : r.k === 'diag' ? '☰' : '⏻') : escapeHtml(r.fmt(r.iq ? S.iq[r.p] : r.p ? S.src[r.p] : S[r.k]))) + '</span></div>').join('') +
-    ezanStatusHtml() +
-    '<div class="note">Noor for webOS · prayer times calculated on-device (adhan-js) · Umm al-Qura (Saudi) / Diyanet (Türkiye) · Quran text: alquran.cloud · Recitation: Badr Al-Turki (mp3quran.net) · Adhan: bundled recordings (optional streams: assabile.com) · Weather: Open-Meteo</div></div>';
-  const rowEl = document.querySelectorAll('.row')[rowIdx], box = $('settingsBody'), inner = $('setScroll');
+  let html;
+  if (!settingsSec) {
+    $('settingsTitle').textContent = L.settings; $('settingsHint').textContent = L.secHint;
+    html = '<div class="secGrid">' + SECTIONS.map((sc, i) =>
+      '<div class="secCard' + (i === rowIdx ? ' focus' : '') + '" data-i="' + i + '"><svg viewBox="0 0 24 24"><path d="' + ICON[sc.id] + '" fill="currentColor"/></svg>' +
+      '<div><b>' + L[sc.title] + '</b><small>' + escapeHtml(sc.sum()) + '</small></div></div>').join('') + '</div>';
+  } else {
+    const sc = SECTIONS.filter((x) => x.id === settingsSec)[0];
+    $('settingsTitle').textContent = L.settings + ' › ' + L[sc.title]; $('settingsHint').textContent = L.settingsHint;
+    html = VR().map((r, i) =>
+      '<div class="row' + (r.action ? ' action' : '') + (i === rowIdx ? ' focus' : '') + '" data-i="' + i + '"><span>' +
+      (r.lbl ? r.lbl() + (r.iq ? '' : '<small class="pv">' + (previewRow === i ? L.previewing : (i === rowIdx ? L.preview : '')) + '</small>') : L[r.label || r.k]) + '</span>' +
+      '<span class="val">' + (r.action ? (r.k === 'test' ? '▶' : r.k === 'caps' ? '✓' : r.k === 'diag' ? '☰' : '⏻') : escapeHtml(r.fmt(rowVal(r)))) + '</span></div>').join('') +
+      (settingsSec === 'adhan' ? ezanStatusHtml() : '') +
+      (settingsSec === 'system' ? '<div class="note">Noor ' + NOOR_VERSION + ' for webOS · prayer times calculated on-device (adhan-js) · Quran text: alquran.cloud · Recitation: Badr Al-Turki (mp3quran.net) · Weather: Open-Meteo · github.com/mhkuhail/noor-webos</div>' : '');
+  }
+  $('settingsBody').innerHTML = '<div id="setScroll">' + html + '</div>';
+  Array.prototype.forEach.call(document.querySelectorAll('#settingsBody .row, #settingsBody .secCard'), (el) => el.addEventListener('click', () => {
+    rowIdx = +el.dataset.i; if (!settingsSec) { settingsSec = SECTIONS[rowIdx].id; rowIdx = 0; renderSettings(); } else changeRow(1); }));
+  const rowEl = document.querySelectorAll('#settingsBody .row, #settingsBody .secCard')[rowIdx], box = $('settingsBody'), inner = $('setScroll');
   if (rowEl) {
     const viewH = box.clientHeight; let y = 0;
     if (rowEl.offsetTop + rowEl.offsetHeight > viewH - 20) y = rowEl.offsetTop + rowEl.offsetHeight - viewH + 20;
-    if (rowIdx === ROWS.length - 1) y = Math.max(y, inner.scrollHeight - viewH);
+    if (settingsSec && rowIdx === VR().length - 1) y = Math.max(y, inner.scrollHeight - viewH);
     inner.style.transform = 'translateY(' + (-Math.max(0, y)) + 'px)';
   }
-  Array.prototype.forEach.call(document.querySelectorAll('.row'), (el) => el.addEventListener('click', () => { rowIdx = +el.dataset.i; changeRow(1); }));
 }
 let previewRow = -1;
 function stopPreview() { if (previewRow >= 0) { const a = $('adhanAudio'); a.onerror = null; a.pause(); previewRow = -1; } }
 function previewSource(i) {
-  const r = ROWS[i]; const a = $('adhanAudio');
+  const r = VR()[i]; const a = $('adhanAudio');
   if (previewRow === i) { stopPreview(); renderSettings(); return; }
   stopPreview(); previewRow = i;
   const list = adhanList(r.p);
@@ -538,7 +588,7 @@ function previewSource(i) {
   next(); renderSettings();
 }
 function changeRow(dir) {
-  const r = ROWS[rowIdx];
+  const r = VR()[rowIdx]; if (!r) return;
   if (r.action) { r.action(); return; }
   if (r.iq) {
     const i = r.opts.indexOf(S.iq[r.p]);
@@ -550,11 +600,11 @@ function changeRow(dir) {
     S.src[r.p] = r.opts[(i + dir + r.opts.length) % r.opts.length];
     save('noor.settings', S); stopPreview(); renderSettings(); return;
   }
-  const i = r.opts.indexOf(S[r.k]);
-  S[r.k] = r.opts[(i + dir + r.opts.length) % r.opts.length];
+  const opts = rowOpts(r); const cur = opts.indexOf(rowVal(r));
+  const v = opts[((cur < 0 ? 0 : cur) + dir + opts.length) % opts.length];
+  if (r.set) r.set(v); else S[r.k] = v;
   save('noor.settings', S);
-  if (r.k === 'city' || r.k === 'renewDev' || r.k === 'iqamah') startService();
-  if (r.k === 'city') { weather = null; fetchWeather(); }
+  if (['country', 'city', 'method', 'renewDev', 'iqamah'].indexOf(r.k) >= 0) { startService(); weather = null; fetchWeather(); tick(true); }
   applyChrome(); renderSettings();
 }
 
@@ -656,7 +706,7 @@ function openDiag() {
   show('reader');
   luna(SVC + 'status', {}, (e, r) => {
     const lines = [];
-    lines.push('Noor ' + (window.__noorVersion || '') + ' · bridge: ' + (typeof window.PalmServiceBridge !== 'undefined'));
+    lines.push('Noor ' + NOOR_VERSION + ' · ' + city().en + ' (UTC' + (city().tz >= 0 ? '+' : '') + (city().tz / 60) + ') · bridge: ' + (typeof window.PalmServiceBridge !== 'undefined') + ' · service log times are UTC');
     if (e) lines.push('SERVICE: not reachable (' + e + ')');
     else {
       lines.push('SERVICE: running=' + r.running + ' cfg=' + r.cfg + ' subscribers=' + r.subscribers + ' next=' + (r.next ? r.next.prayer + ' ' + new Date(r.next.at).toISOString().slice(11, 16) + 'Z' : '-'));
@@ -843,12 +893,22 @@ document.addEventListener('keydown', (e) => {
     else if (back) return closePanels();
     focusDhikr();
   } else if (view === 'settings') {
-    if (k === K.DOWN) { stopPreview(); rowIdx = Math.min(ROWS.length - 1, rowIdx + 1); }
+    if (!settingsSec) {
+      const n = SECTIONS.length, cols = 2;
+      if (k === K.DOWN) rowIdx = Math.min(n - 1, rowIdx + cols); else if (k === K.UP) rowIdx = Math.max(0, rowIdx - cols);
+      else if (k === K.LEFT) rowIdx = Math.max(0, Math.min(n - 1, rowIdx + (rtl ? 1 : -1)));
+      else if (k === K.RIGHT) rowIdx = Math.max(0, Math.min(n - 1, rowIdx + (rtl ? -1 : 1)));
+      else if (k === K.OK) { settingsSec = SECTIONS[rowIdx].id; rowIdx = 0; }
+      else if (back) return closePanels();
+      renderSettings(); e.preventDefault(); return;
+    }
+    const rows = VR();
+    if (k === K.DOWN) { stopPreview(); rowIdx = Math.min(rows.length - 1, rowIdx + 1); }
     else if (k === K.UP) { stopPreview(); rowIdx = Math.max(0, rowIdx - 1); }
     else if (k === K.LEFT) return changeRow(rtl ? 1 : -1);
-    else if (k === K.OK && ROWS[rowIdx].p && !ROWS[rowIdx].iq) return previewSource(rowIdx);
+    else if (k === K.OK && rows[rowIdx].p && !rows[rowIdx].iq) return previewSource(rowIdx);
     else if (k === K.RIGHT || k === K.OK) return changeRow(rtl ? -1 : 1);
-    else if (back) { stopPreview(); return closePanels(); }
+    else if (back) { stopPreview(); const id = settingsSec; settingsSec = null; rowIdx = SECTIONS.map((x) => x.id).indexOf(id); renderSettings(); e.preventDefault(); return; }
     renderSettings();
   }
   e.preventDefault();

@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.0.0
+- **Background service fixed on webOS 4.x.** LG TVs with webOS 4.x run JS services on Node.js 0.12.2 (ES5 only); the service
+  crashed at start-up, so adhan/iqamah notifications never reached YouTube/Netflix. It is now compiled to ES5 with polyfills
+  (`scripts/service-es5.cjs`) and verified to parse as pure ES5.
+- **49 cities in 19 countries** (Saudi Arabia, Türkiye, UAE, Kuwait, Qatar, Bahrain, Oman, Jordan, Iraq, Yemen, Syria, Palestine,
+  Lebanon, Egypt, Pakistan, Malaysia, Indonesia, UK, Germany), each with its calculation method; countries with daylight saving
+  follow the TV's time zone. Calculation method can be overridden.
+- **New Settings** with sections: City & prayer times · Adhan · Iqamah · Display & language · Holy Quran · System & support.
+- Service log shows local times.
+
 ## 1.9.0
 - **Iqamah alerts**: after each adhan the home screen counts down to the iqamah («إقامة العشاء بعد 12:30»), then shows a banner, plays a short tone and posts a TV notification (also over YouTube/Netflix via the background service).
 - Default intervals after the adhan: Fajr 22 · Dhuhr 17 · Asr 17 · Maghrib 7 · Isha 17 min (no iqamah alert for Jumu'ah). Each is adjustable in Settings (3–45 min); the alert and tone can be switched off.

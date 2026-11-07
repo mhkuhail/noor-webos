@@ -26,9 +26,9 @@ else
   echo "ℹ no app/audio/ezan-*.mp3 found — the app will use the built-in chime (or online adhan streams)"
 fi
 
-# 4) JavaScript: app for the TV's Chromium 53, service for webOS Node 8
-npx esbuild src/main.js --bundle --format=iife --target=chrome53 --minify --outfile=build/app/app.js --log-level=warning
-npx esbuild service/service.js --bundle --platform=node --target=node8 --format=cjs --external:webos-service --minify-syntax --outfile=build/service/service.js --log-level=warning
+# 4) JavaScript: app for the TV's Chromium 53, service for webOS Node 0.12 (ES5)
+npx esbuild src/main.js --bundle --format=iife --target=chrome53 --minify --define:__NOOR_VERSION__="\"$VERSION\"" --outfile=build/app/app.js --log-level=warning
+node scripts/service-es5.cjs build/service/service.js   # webOS 4.x runs services on Node.js 0.12
 cp service/services.json build/service/
 node -e "require('fs').writeFileSync('build/service/package.json',JSON.stringify({name:'com.noor.webos.service',version:'$VERSION',main:'service.js'},null,2))"
 echo "✓ build/ ready (v$VERSION) — run: npm run package"

@@ -17,7 +17,7 @@ Quick UI iteration in a desktop browser: `npm run build`, then open `build/app/i
 ## Rules of thumb
 
 - The app must run on **Chromium 53**: keep the esbuild target, avoid new CSS (`inset`, flex `gap`, `url()` in CSS variables).
-- Service code runs on **Node 8**: no `async/await`.
+- Service code runs on **Node.js 0.12** on webOS 4.x: the build transpiles it to ES5 — keep `npm run build` green (acorn check).
 - Every privileged webOS call needs a fallback and should show up in the capability check.
 - Never type Quranic text by hand — load it from the Quran API.
 - Replace adhan recordings in `app/audio/` with the same file names.

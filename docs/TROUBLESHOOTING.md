@@ -16,8 +16,8 @@ plays on time. Run *Settings → TV capability check* and include a photo when r
 - Check the TV volume / output (soundbar).
 - Settings lists each `audio/ezan-*.mp3` with ✓ when found. Without files, Noor uses the online source chosen per prayer, then a chime.
 
-**The adhan didn't play while watching YouTube / Netflix**
-Fixed in 1.8.0. Open Noor once after installing (that starts the service and schedules the prayers), then switch to YouTube.
+**The adhan didn't play while watching YouTube / Netflix** · *Settings → System → service log* says `SERVICE: not reachable`
+Fixed in 2.0.0 (the service crashed on webOS 4.x's Node.js 0.12). Open Noor once after installing (that starts the service and schedules the prayers), then switch to YouTube.
 If it still doesn't come up, open *Settings → Adhan service log* and *TV capability check* and send photos of both.
 
 **The adhan didn't play at night**

@@ -184,3 +184,13 @@ body.adhanOn #banners { display:none; }
   font-size:56px; font-weight:800; color:#fff; direction:rtl; box-shadow:0 0 40px rgba(155,209,139,.45); }
 body.iqOn #banners { display:none; }
 .iqPill .mosque { width:60px; height:60px; color:#9bd18b; margin-left:18px; }
+/* settings: section cards */
+.secGrid { display:flex; flex-wrap:wrap; margin:0; padding:6px 4px; direction:rtl; }
+html[dir=ltr] .secGrid { direction:ltr; }
+.secCard { width:calc(50% - 24px); margin:12px; padding:30px 34px; border-radius:28px; background:rgba(0,0,0,.32); border:3px solid rgba(255,255,255,.14);
+  display:flex; align-items:center; cursor:pointer; }
+.secCard svg { width:64px; height:64px; color:var(--accent); flex:0 0 auto; margin:0 0 0 26px; }
+html[dir=ltr] .secCard svg { margin:0 26px 0 0; }
+.secCard b { display:block; font-size:40px; font-weight:800; line-height:1.3; }
+.secCard small { display:block; font-size:24px; color:rgba(255,255,255,.72); margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:620px; }
+.secCard.focus { border-color:#fff; background:rgba(255,255,255,.16); }

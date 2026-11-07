@@ -4,7 +4,7 @@
 ┌──────────────────────── LG webOS TV (Developer Mode) ────────────────────────┐
 │                                                                              │
 │  com.noor.webos  (web app, Chromium 53)          com.noor.webos.service      │
-│  ─────────────────────────────────────           (JS service, Node 8)        │
+│  ─────────────────────────────────────           (JS service, Node 0.12/ES5) │
 │  • UI: home, dock, Quran, adhkar, settings       • keep-alive activity       │
 │  • prayer times (adhan-js), Hijri, reminders     • 10 s prayer loop          │
 │  • adhan player (bundled MP3 → stream → chime)   • T-60 s: toast, turnOnScreen,│
@@ -35,7 +35,7 @@
 
 - **Chromium 53**: no `inset`, flex `gap`, logical properties, optional chaining; and **no `url()` inside CSS
   variables** — wallpapers are therefore set from JavaScript. esbuild targets `chrome53`.
-- **Node 8** in services: no `async/await` in service code; bundled with `--target=node8`.
+- **Node.js 0.12.2** runs JS services on webOS TV 4.x (8.12 on 5–6, 12+ on 22+): the service is bundled, transpiled to ES5 with Babel + core-js polyfills and verified with acorn (`scripts/service-es5.cjs`).
 - Luna calls are made through `PalmServiceBridge` (what `webOSTV.js` uses internally). Developer-Mode apps may be
   denied some methods; every privileged step has a fallback (app → service → degraded mode), and the capability
   check reports which path works.
