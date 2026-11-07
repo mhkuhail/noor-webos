@@ -27,7 +27,7 @@ Add the TV: **Add device → Use Developer Mode → Skip →** IP address + Pass
 
 ## 3. Install Noor
 
-Download [`com.noor.webos_1.8.0_all.ipk`](https://github.com/mhkuhail/noor-webos/releases/download/v1.8.0/com.noor.webos_1.8.0_all.ipk) from the [Releases page](https://github.com/mhkuhail/noor-webos/releases) (or build it — see the main README),
+Download [`com.noor.webos_1.9.0_all.ipk`](https://github.com/mhkuhail/noor-webos/releases/download/v1.9.0/com.noor.webos_1.9.0_all.ipk) from the [Releases page](https://github.com/mhkuhail/noor-webos/releases) (or build it — see the main README),
 then in Dev Manager click **Install** (top right) and choose the file. Updating works the same way and keeps your settings.
 
 ### Command line alternative
@@ -36,7 +36,7 @@ then in Dev Manager click **Install** (top right) and choose the file. Updating 
 npm install -g @webos-tools/cli
 ares-setup-device                 # add: name "tv", IP, port 9922, user prisoner
 ares-novacom --device tv --getkey # enter the Passphrase
-ares-install --device tv com.noor.webos_1.8.0_all.ipk
+ares-install --device tv com.noor.webos_1.9.0_all.ipk
 ```
 
 ## 4. First run

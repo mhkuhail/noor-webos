@@ -2,13 +2,14 @@ import { Coordinates, CalculationMethod, PrayerTimes } from 'adhan';
 import { CITIES, PRAYERS, T, ADHKAR, RECITER_URL, EZAN_FILES, ADHAN_SOURCES } from './content.js';
 
 /* ================= state & storage ================= */
-const DEFAULTS = { reOff: true, renewDev: true, city: 'riyadh', lang: 'ar', theme: 'zakhrafa', h12: false, adhan: true, hijriAdj: 0, oled: true, adhanStyle: 'turkish', continuous: true, follow: true,
+const DEFAULTS = { iqamah: true, iqamahSound: true, iq: { fajr: 22, dhuhr: 17, asr: 17, maghrib: 7, isha: 17 }, reOff: true, renewDev: true, city: 'riyadh', lang: 'ar', theme: 'zakhrafa', h12: false, adhan: true, hijriAdj: 0, oled: true, adhanStyle: 'turkish', continuous: true, follow: true,
   src: { fajr: 'local', dhuhr: 'local', asr: 'local', maghrib: 'local', isha: 'local' } };
 function load(key, def) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch (e) { return def; } }
 function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { /* storage full or unavailable */ } }
 
 const S = Object.assign({}, DEFAULTS, load('noor.settings', {}));
 S.src = Object.assign({}, DEFAULTS.src, S.src || {});
+S.iq = Object.assign({}, DEFAULTS.iq, S.iq || {});
 // v1.3 migration: bundled adhans become the default; old theme names map to the new Islamic themes
 if (load('noor.ver', 0) < 13) { S.src = Object.assign({}, DEFAULTS.src); S.theme = 'masjid'; save('noor.ver', 13); save('noor.settings', S); }
 if (load('noor.ver', 0) < 14) { S.theme = 'zakhrafa'; save('noor.ver', 14); save('noor.settings', S); }
@@ -62,7 +63,7 @@ function heartbeat() {
 }
 function startService() {
   const c = city();
-  luna(SVC + 'start', { lat: c.lat, lng: c.lng, method: c.method, tz: c.tz, renew: S.renewDev }, (err) => { serviceOk = !err; });
+  luna(SVC + 'start', { lat: c.lat, lng: c.lng, method: c.method, tz: c.tz, renew: S.renewDev, iqamah: S.iqamah ? S.iq : null }, (err) => { serviceOk = !err; });
 }
 let serviceOk = false;
 function screenCtl(on, cb) {
@@ -165,12 +166,12 @@ function setThemeClass() {
   // Wallpapers are set directly (not through CSS variables): the TV's Chromium 53 ignores url() inside var().
   const wall = S.theme === 'awqat' ? mood : S.theme;
   if (applyWall.last !== wall) { applyWall.last = wall; applyWall(wall); }
-  const keep = ['dim', 'adhanOn'].filter((x) => document.body.classList.contains(x));
+  const keep = ['dim', 'adhanOn', 'iqOn'].filter((x) => document.body.classList.contains(x));
   document.body.className = ['theme-' + S.theme].concat(S.theme === 'awqat' ? ['mood-' + mood] : [], keep).join(' ');
 }
 const toAr = (str) => (S.lang === 'ar' ? String(str).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]) : String(str));
 
-let lastMinute = -1; let wokeKey = ''; const LEAD = 60000;
+let lastMinute = -1; let iqFired = load('noor.iqfired', ''); let wokeKey = ''; const LEAD = 60000;
 function tick(force) {
   const now = new Date(); const c = cityNow(now); const L = tr();
   // clock
@@ -185,7 +186,19 @@ function tick(force) {
   if (!nextKey) { nextKey = 'fajr'; nextTime = timesFor(1).fajr; }
   const diff = Math.max(0, Math.floor((nextTime - now) / 1000));
   const nm = (nextKey === 'dhuhr' && isFri) ? L.jumuah : L[nextKey];
-  $('nextLine').innerHTML = escapeHtml(nm) + ' ' + L.after + ' <span class="cd">' + Math.floor(diff / 3600) + ':' + pad(Math.floor(diff / 60) % 60) + ':' + pad(diff % 60) + '</span>';
+  const iqa = iqamahWindow(today, now, isFri);
+  if (iqa) {
+    const d2 = Math.max(0, Math.floor((iqa.at - now) / 1000));
+    $('nextLine').innerHTML = L.iqamahIn + ' ' + escapeHtml(L[iqa.k]) + ' ' + L.after + ' <span class="cd">' + Math.floor(d2 / 60) + ':' + pad(d2 % 60) + '</span>';
+  } else {
+    $('nextLine').innerHTML = escapeHtml(nm) + ' ' + L.after + ' <span class="cd">' + Math.floor(diff / 3600) + ':' + pad(Math.floor(diff / 60) % 60) + ':' + pad(diff % 60) + '</span>';
+  }
+  // iqamah alert
+  for (const k of ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']) {
+    if (!S.iqamah || (k === 'dhuhr' && isFri)) continue;
+    const at = today[k].getTime() + (S.iq[k] || 0) * 60000; const key = c.toISOString().slice(0, 10) + ':iq:' + k;
+    if (now >= at && now - at < 90000 && iqFired !== key) { iqFired = key; save('noor.iqfired', key); fireIqamah(k); }
+  }
   $('greetText').textContent = isFri ? L.jumuahMubarak : L.salam;
 
   // pre-wake: if Noor is behind another app, come to the front ~1 min before the adhan
@@ -257,6 +270,26 @@ function rotateReminder(today, now, c, h) {
 }
 
 function escapeHtml(s) { return String(s).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch])); }
+
+/* ================= iqamah ================= */
+function iqamahWindow(today, now, isFri) {
+  if (!S.iqamah) return null;
+  for (const k of ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']) {
+    if (k === 'dhuhr' && isFri) continue;
+    const a = today[k].getTime(), at = a + (S.iq[k] || 0) * 60000;
+    if (now >= a && now < at) return { k: k, at: at };
+  }
+  return null;
+}
+let iqTimer = null;
+function fireIqamah(k) {
+  const L = tr(); alog('iqamah ' + k + (document.hidden ? ' (Noor in background)' : ''));
+  // the background service posts the TV notification; Noor posts it itself only if the service isn't reachable
+  if (!serviceOk) tvToast(L.iqamahNow + ' ' + L[k]);
+  if (S.iqamahSound) { const a = $('iqamahAudio'); try { a.currentTime = 0; const p = a.play(); if (p && p.catch) p.catch(() => {}); } catch (e) { /* ignore */ } }
+  const el = $('iqamahBanner'); $('iqamahText').textContent = L.iqamahNow + ' ' + L[k];
+  el.classList.remove('hidden'); document.body.classList.add('iqOn'); clearTimeout(iqTimer); iqTimer = setTimeout(() => { el.classList.add('hidden'); document.body.classList.remove('iqOn'); }, 90000);
+}
 
 /* ================= weather (Open-Meteo, no key) ================= */
 function fetchWeather() {
@@ -464,6 +497,10 @@ const ROWS = [
   { k: 'follow', opts: [true, false], fmt: (v) => (v ? tr().on : tr().off) },
   { k: 'hijriAdj', opts: [-2, -1, 0, 1, 2], fmt: (v) => (v > 0 ? '+' : '') + v + ' ' + tr().days },
   { k: 'oled', opts: [true, false], fmt: (v) => (v ? tr().on : tr().off) },
+  { k: 'iqamah', label: 'iqamahOn', opts: [true, false], fmt: (v) => (v ? tr().on : tr().off) },
+  ...['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].map((p) => ({ k: 'iq', p: p, iq: true, opts: [3, 5, 7, 10, 12, 15, 17, 20, 22, 25, 30, 35, 40, 45],
+    lbl: () => tr().iqamahFor + ' ' + tr()[p], fmt: (v) => v + ' ' + tr().minWord })),
+  { k: 'iqamahSound', opts: [true, false], fmt: (v) => (v ? tr().on : tr().off) },
   { k: 'reOff', opts: [true, false], fmt: (v) => (v ? tr().on : tr().off) },
   { k: 'renewDev', opts: [true, false], fmt: (v) => (v ? tr().on : tr().off) },
   { k: 'caps', action: () => openCaps() },
@@ -476,8 +513,8 @@ function renderSettings() {
   const L = tr();
   $('settingsTitle').textContent = L.settings; $('settingsHint').textContent = L.settingsHint;
   $('settingsBody').innerHTML = '<div id="setScroll">' + ROWS.map((r, i) =>
-    '<div class="row' + (r.action ? ' action' : '') + (i === rowIdx ? ' focus' : '') + '" data-i="' + i + '"><span>' + (r.lbl ? r.lbl() + '<small class="pv">' + (previewRow === i ? L.previewing : (i === rowIdx ? L.preview : '')) + '</small>' : L[r.label || r.k]) + '</span>' +
-    '<span class="val">' + (r.action ? (r.k === 'test' ? '▶' : r.k === 'caps' ? '✓' : r.k === 'diag' ? '☰' : '⏻') : escapeHtml(r.fmt(r.p ? S.src[r.p] : S[r.k]))) + '</span></div>').join('') +
+    '<div class="row' + (r.action ? ' action' : '') + (i === rowIdx ? ' focus' : '') + '" data-i="' + i + '"><span>' + (r.lbl ? r.lbl() + (r.iq ? '' : '<small class="pv">' + (previewRow === i ? L.previewing : (i === rowIdx ? L.preview : '')) + '</small>') : L[r.label || r.k]) + '</span>' +
+    '<span class="val">' + (r.action ? (r.k === 'test' ? '▶' : r.k === 'caps' ? '✓' : r.k === 'diag' ? '☰' : '⏻') : escapeHtml(r.fmt(r.iq ? S.iq[r.p] : r.p ? S.src[r.p] : S[r.k]))) + '</span></div>').join('') +
     ezanStatusHtml() +
     '<div class="note">Noor for webOS · prayer times calculated on-device (adhan-js) · Umm al-Qura (Saudi) / Diyanet (Türkiye) · Quran text: alquran.cloud · Recitation: Badr Al-Turki (mp3quran.net) · Adhan: bundled recordings (optional streams: assabile.com) · Weather: Open-Meteo</div></div>';
   const rowEl = document.querySelectorAll('.row')[rowIdx], box = $('settingsBody'), inner = $('setScroll');
@@ -503,6 +540,11 @@ function previewSource(i) {
 function changeRow(dir) {
   const r = ROWS[rowIdx];
   if (r.action) { r.action(); return; }
+  if (r.iq) {
+    const i = r.opts.indexOf(S.iq[r.p]);
+    S.iq[r.p] = r.opts[((i < 0 ? 0 : i) + dir + r.opts.length) % r.opts.length];
+    save('noor.settings', S); startService(); renderSettings(); return;
+  }
   if (r.p) {
     const i = r.opts.indexOf(S.src[r.p]);
     S.src[r.p] = r.opts[(i + dir + r.opts.length) % r.opts.length];
@@ -511,7 +553,7 @@ function changeRow(dir) {
   const i = r.opts.indexOf(S[r.k]);
   S[r.k] = r.opts[(i + dir + r.opts.length) % r.opts.length];
   save('noor.settings', S);
-  if (r.k === 'city' || r.k === 'renewDev') startService();
+  if (r.k === 'city' || r.k === 'renewDev' || r.k === 'iqamah') startService();
   if (r.k === 'city') { weather = null; fetchWeather(); }
   applyChrome(); renderSettings();
 }
@@ -749,6 +791,7 @@ const K = { PLAY: 415, PAUSE: 19, PLAYPAUSE: 10252, STOP: 413, FF: 417, REW: 412
 document.addEventListener('keydown', (e) => {
   const k = e.keyCode; const rtl = S.lang === 'ar';
   if (nightOn() && view !== 'adhan') { nightMode(false); save('noor.offByNoor', false); e.preventDefault(); return; }
+  if (!$('iqamahBanner').classList.contains('hidden')) { $('iqamahBanner').classList.add('hidden'); document.body.classList.remove('iqOn'); e.preventDefault(); return; }
   if (view === 'adhan') { stopAdhan(); e.preventDefault(); return; }
   if (k === K.RED) { openAdhkar('m'); return; }
   if (k === K.GREEN) { openAdhkar('e'); return; }
@@ -803,7 +846,7 @@ document.addEventListener('keydown', (e) => {
     if (k === K.DOWN) { stopPreview(); rowIdx = Math.min(ROWS.length - 1, rowIdx + 1); }
     else if (k === K.UP) { stopPreview(); rowIdx = Math.max(0, rowIdx - 1); }
     else if (k === K.LEFT) return changeRow(rtl ? 1 : -1);
-    else if (k === K.OK && ROWS[rowIdx].p) return previewSource(rowIdx);
+    else if (k === K.OK && ROWS[rowIdx].p && !ROWS[rowIdx].iq) return previewSource(rowIdx);
     else if (k === K.RIGHT || k === K.OK) return changeRow(rtl ? -1 : 1);
     else if (back) { stopPreview(); return closePanels(); }
     renderSettings();

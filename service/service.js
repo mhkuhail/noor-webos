@@ -74,7 +74,7 @@ var screenWasOff = false;
 var NAMES = { fajr: 'الفجر', dhuhr: 'الظهر', asr: 'العصر', maghrib: 'المغرب', isha: 'العشاء' };
 function doPrayer(prayer, at) {
   log('prayer ' + prayer + ' at ' + new Date(at).toISOString().slice(11, 16) + 'Z');
-  toast('🕌 يحين بعد دقيقة أذان ' + (NAMES[prayer] || prayer));
+  toast('يحين بعد دقيقة أذان ' + (NAMES[prayer] || prayer));
   powerState(function (e, ps) {
     screenWasOff = !!(ps && /screen ?off/i.test(ps));
     var go = function () {
@@ -103,6 +103,19 @@ function doPrayer(prayer, at) {
 function loop() {
   if (!state.cfg) return;
   var now = Date.now();
+  // iqamah notifications (Friday Dhuhr = Jumu'ah: no iqamah alert)
+  if (state.cfg.iqamah) {
+    var t0 = timesFor(0); var tz = state.cfg.tz == null ? 180 : state.cfg.tz;
+    var fri = new Date(now + tz * 60000).getUTCDay() === 5;
+    PRAYERS.forEach(function (k) {
+      if (k === 'dhuhr' && fri) return;
+      var mins = state.cfg.iqamah[k]; if (!mins) return;
+      var at = t0[k].getTime() + mins * 60000; var key = new Date(at).toISOString().slice(0, 10) + ':iq:' + k;
+      if (now >= at && now < at + 90000 && !state.done[key]) {
+        state.done[key] = 1; persist(); log('iqamah ' + k); toast('حان موعد إقامة صلاة ' + (NAMES[k] || k));
+      }
+    });
+  }
   [0, 1].forEach(function (d) {
     var t = timesFor(d);
     PRAYERS.forEach(function (k) {
@@ -132,7 +145,7 @@ function ensureRunning() {
 /* ---------- methods ---------- */
 service.register('start', function (msg) {
   var p = msg.payload || {};
-  if (p.lat != null) state.cfg = { lat: p.lat, lng: p.lng, method: p.method, tz: p.tz, prayers: p.prayers, renew: p.renew };
+  if (p.lat != null) state.cfg = { lat: p.lat, lng: p.lng, method: p.method, tz: p.tz, prayers: p.prayers, renew: p.renew, iqamah: p.iqamah || null };
   persist(); ensureRunning(); loop(); scheduleActivities();
   var n = nextPrayer();
   msg.respond({ returnValue: true, running: true, next: n, lastRenew: state.lastRenew });
