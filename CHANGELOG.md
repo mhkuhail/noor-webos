@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.1
+- **Test adhan over YouTube** (Settings → Adhan): runs a pretend adhan in 3 minutes through exactly the same path as a real one, so the
+  YouTube case can be checked without waiting for a prayer.
+- The service no longer depends on its settings file: every Activity Manager wake-up carries the city/method, and the state is saved
+  to several places (some TVs don't let the service write in its own folder). Crashes are caught and written to the log.
+- Noor re-sends its settings to the service every time it goes to the background.
+- Service log shows local time, where the state is saved, and service uptime.
+
 ## 2.1.0
 - **106 cities in 30 countries**: all 22 Arab League countries (Gulf, Iraq & the Levant, Egypt, Sudan, Libya, Tunisia, Algeria,
   Morocco, Mauritania, Somalia, Djibouti, Comoros) plus the **United States** (14 cities) and **Canada** (5), alongside Türkiye,

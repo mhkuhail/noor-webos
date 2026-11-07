@@ -67,6 +67,15 @@ function heartbeat() {
     hbBridge.call(SVC + 'heartbeat', JSON.stringify({ subscribe: true }));
   } catch (e) { /* ignore */ }
 }
+function startTrial() {
+  const L = tr(); startService();
+  luna(SVC + 'trial', { seconds: 180, prayer: 'dhuhr' }, (err) => {
+    alog(err ? 'TEST: service did not answer (' + err + ')' : 'TEST started: adhan in 3 min');
+    $('readerTitle').textContent = L.trial; $('readerHint').textContent = L.capsHint;
+    $('readerBody').innerHTML = '<div id="readerScroll"><div class="note" style="font-size:34px;line-height:1.7">' + escapeHtml(err ? L.trialFail + ' (' + err + ')' : L.trialStarted) + '</div></div>';
+    view = 'caps'; show('reader');
+  }, 8000);
+}
 function startService() {
   const c = city();
   luna(SVC + 'start', { lat: c.lat, lng: c.lng, method: c.method, angles: CUSTOM_METHODS[c.method] || null, tz: c.tz, renew: S.renewDev, iqamah: S.iqamah ? S.iq : null }, (err) => { serviceOk = !err; });
@@ -513,6 +522,7 @@ const ROWS = [
   })),
   { sec: 'adhan', k: 'reOff', opts: [true, false], fmt: onOff },
   { sec: 'adhan', k: 'test', action: () => { closePanels(); showAdhan('dhuhr'); } },
+  { sec: 'adhan', k: 'trial', action: startTrial },
   // Iqamah
   { sec: 'iqamah', k: 'iqamah', label: 'iqamahOn', opts: [true, false], fmt: onOff },
   ...['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].map((p) => ({ sec: 'iqamah', k: 'iq', p: p, iq: true, opts: [3, 5, 7, 10, 12, 15, 17, 20, 22, 25, 30, 35, 40, 45],
@@ -732,10 +742,11 @@ function openDiag() {
   show('reader');
   luna(SVC + 'status', {}, (e, r) => {
     const lines = [];
-    lines.push('Noor ' + NOOR_VERSION + ' · ' + city().en + ' (UTC' + (city().tz >= 0 ? '+' : '') + (city().tz / 60) + ') · bridge: ' + (typeof window.PalmServiceBridge !== 'undefined') + ' · service log times are UTC');
+    lines.push('Noor ' + NOOR_VERSION + ' · ' + city().en + ' (UTC' + (city().tz >= 0 ? '+' : '') + (city().tz / 60) + ') · bridge: ' + (typeof window.PalmServiceBridge !== 'undefined'));
     if (e) lines.push('SERVICE: not reachable (' + e + ')');
     else {
       lines.push('SERVICE: running=' + r.running + ' cfg=' + r.cfg + ' subscribers=' + r.subscribers + ' next=' + (r.next ? r.next.prayer + ' ' + new Date(r.next.at).toISOString().slice(11, 16) + 'Z' : '-'));
+      lines.push('state: ' + (r.stateFile || ('NOT SAVED ' + (r.stateErr || ''))) + ' · uptime ' + r.uptime + ' s');
       lines.push('scheduled: ' + JSON.stringify(r.sched || {}));
       lines.push('--- service log ---'); (r.log || []).forEach((x) => lines.push(x));
     }
@@ -982,7 +993,7 @@ function handleLaunch(params) {
     const at = +params.at, ms = at - Date.now();
     clearTimeout(adhanTimer);
     if (ms > -180000) adhanTimer = setTimeout(() => {
-      const key = cityNow(new Date(at)).toISOString().slice(0, 10) + ':' + params.prayer;
+      const key = cityNow(new Date(at)).toISOString().slice(0, 10) + ':' + params.prayer + (params.trial ? ':trial:' + at : '');
       if (firedKey === key || view === 'adhan') return;
       firedKey = key; save('noor.fired', key);
       const fri = cityNow(new Date(at)).getUTCDay() === 5;
@@ -1023,6 +1034,7 @@ document.addEventListener('visibilitychange', () => {
   clearTimeout(hiddenTimer);
   if (!document.hidden) { tick(true); return; }
   alog('Noor went to the background');
+  startService(); heartbeat();   // make sure the service has the settings and is awake before another app takes over
   // exact timer for the next pre-wake (setInterval may be throttled in the background)
   try { const t = timesFor(0), t1 = timesFor(1), now = Date.now(); let next = null;
     ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].forEach((k) => { [t[k], t1[k]].forEach((d) => {
