@@ -23,6 +23,10 @@ Noor is an open-source TV app inspired by [Noor TV](https://github.com/majedphot
 rebuilt from scratch for **LG webOS**, which cannot run Android apps. It runs in LG's official
 **Developer Mode** — no rooting required.
 
+> **New: Android TV / Google TV.** The same app now also runs on TCL, Sony Android, Xiaomi and HDMI boxes such as the STC TV box
+> (which turns a non-Android TV on over HDMI-CEC), merged with Noor TV's phone messages, drawing and "banner only" mode.
+> See **[docs/ANDROID.md](docs/ANDROID.md)**.
+
 ## Features
 
 | | |
@@ -145,6 +149,8 @@ Not affiliated with LG Electronics. *webOS* and *LG* are trademarks of LG Electr
 خدمة خلفية تُظهر نور فوق يوتيوب ونتفليكس وقت الأذان وتوقظ الشاشة · القرآن الكريم كاملًا بصوت الشيخ بدر التركي مع النص العثماني ·
 أذكار الصباح والمساء مع عدّاد · تذكير الجمعة والأيام البيض وصيام الاثنين والخميس · ثلاث خلفيات (زخرفة، مسجد الليل، أوقات اليوم) ·
 تشغيل يوتيوب وكل تطبيقات التلفاز · تجديد وضع المطوّر تلقائيًا · فحص قدرات التلفاز.
+
+**جديد: أندرويد تي في وقوقل تي في** — نفس التطبيق يعمل الآن على تي سي إل وسوني أندرويد وشاومي وأجهزة HDMI مثل جهاز STC TV (ويشغّل التلفاز غير الأندرويد عبر HDMI-CEC)، مع رسائل ورسم من الجوال وخيار «شريط تنبيه فقط» من Noor TV. التفاصيل: [docs/ANDROID.md](docs/ANDROID.md)
 
 **الإصدار الحالي: 2.1.1** — ⬇️ [تنزيل ملف التطبيق ‎.ipk‎](https://github.com/mhkuhail/noor-webos/releases/download/v2.1.1/com.noor.webos_2.1.1_all.ipk)
 

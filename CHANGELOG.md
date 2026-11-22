@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+- **Android TV / Google TV** (`android/`, [docs/ANDROID.md](docs/ANDROID.md)): the same web app in a native WebView shell; webOS calls are
+  answered natively through `android-shim.js`. One APK for TCL / Sony Android / Xiaomi TVs and HDMI boxes (STC TV box, Chromecast, Mi Box).
+- Exact AlarmManager alarms one minute before each adhan: wake the box from standby (HDMI-CEC turns the TV on), bring Noor over other apps,
+  iqamah banner over other apps. Re-armed after boot, updates and clock / time-zone changes.
+- Merged from Noor TV (majedphotos, MIT): messages and finger drawing from a phone (`:8080`), "banner only" while a film plays, salawat line every 45 min with Al-Kahf on Friday.
+- New Android-only settings: *Adhan while a film is on* (play / banner only), *Salawat reminder*, *Messages & drawing from your phone* (shows the address).
+- Optional device admin so *Screen off* puts the box really to sleep; otherwise Night mode as on LG.
+- CI builds `noor-android-<version>.apk` next to the `.ipk`.
+
 ## 2.1.1
 - **Test adhan over YouTube** (Settings → Adhan): runs a pretend adhan in 3 minutes through exactly the same path as a real one, so the
   YouTube case can be checked without waiting for a prayer.

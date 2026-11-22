@@ -2,10 +2,11 @@
 
 | Component | Used for | License |
 |---|---|---|
-| [Noor TV](https://github.com/majedphotos/noor-tv) by majedphotos | Design reference, wallpapers in `app/wall/` | MIT — see `app/wall/LICENSE-noor-tv.txt` |
+| [Noor TV](https://github.com/majedphotos/noor-tv) by majedphotos | Design reference, wallpapers in `app/wall/`; Android phone-message server, drawing layer, banners and salawat reminder (`android/…/MessageServer.java`, `DrawLayer.java`, `Overlay.java`, `AlarmReceiver.java`) | MIT — see `app/wall/LICENSE-noor-tv.txt` |
 | [adhan-js](https://github.com/batoulapps/adhan-js) | Prayer-time calculation (app, service, helper) | MIT |
 | [lgtv2](https://github.com/hobbyquaker/lgtv2) | SSAP connection in the helper | MIT |
 | [Cairo](https://fonts.google.com/specimen/Cairo), [Amiri](https://www.amirifont.org/) via Fontsource | Fonts (copied at build time) | SIL Open Font License 1.1 |
+| [AndroidX WebKit](https://developer.android.com/jetpack/androidx/releases/webkit) | Android WebView asset loader | Apache-2.0 |
 | [esbuild](https://esbuild.github.io/), [@webos-tools/cli](https://github.com/webos-tools/cli) | Build tooling | MIT / Apache-2.0 |
 
 ## Online services (fetched at runtime, not redistributed)

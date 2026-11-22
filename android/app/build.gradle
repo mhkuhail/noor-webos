@@ -1,0 +1,49 @@
+plugins { id 'com.android.application' }
+
+// Version follows package.json, so the LG and Android builds always carry the same number.
+def pkg = new groovy.json.JsonSlurper().parse(file('../../package.json'))
+def (maj, min, pat) = pkg.version.tokenize('.').collect { it.toInteger() }
+
+android {
+    namespace 'com.noor.tv'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.noor.tv'
+        minSdk 26          // Android TV 8+ (operator boxes such as the STC TV box run 9-12)
+        targetSdk 34
+        versionCode maj * 10000 + min * 100 + pat
+        versionName pkg.version
+    }
+
+    signingConfigs {
+        release {
+            // CI decodes the NOOR_KEYSTORE secret here; local builds without it fall back to the debug key.
+            def ks = file(System.getenv('NOOR_KEYSTORE_FILE') ?: 'noor-release.jks')
+            if (ks.exists()) {
+                storeFile ks
+                storePassword System.getenv('NOOR_KEYSTORE_PASSWORD') ?: ''
+                keyAlias System.getenv('NOOR_KEY_ALIAS') ?: 'noor'
+                keyPassword System.getenv('NOOR_KEYSTORE_PASSWORD') ?: ''
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release.storeFile ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    // The web app (built by scripts/build-android.sh) lives in assets/www; mp3s must stay uncompressed for seeking.
+    androidResources { noCompress += ['mp3', 'woff2'] }
+}
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.11.0'
+}
