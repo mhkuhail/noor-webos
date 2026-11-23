@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.2.0
 - **Android TV / Google TV** (`android/`, [docs/ANDROID.md](docs/ANDROID.md)): the same web app in a native WebView shell; webOS calls are
   answered natively through `android-shim.js`. One APK for TCL / Sony Android / Xiaomi TVs and HDMI boxes (STC TV box, Chromecast, Mi Box).
 - Exact AlarmManager alarms one minute before each adhan: wake the box from standby (HDMI-CEC turns the TV on), bring Noor over other apps,

@@ -16,4 +16,6 @@ node -e "const f='$WWW/index.html',fs=require('fs');let h=fs.readFileSync(f,'utf
 (cd android && ./gradlew --no-daemon -q assembleRelease)
 mkdir -p dist
 cp android/app/build/outputs/apk/release/app-release.apk "dist/noor-android-$VERSION.apk"
-echo "✓ dist/noor-android-$VERSION.apk"
+# fixed name, so …/releases/latest/download/noor-android.apk always points at the newest version
+cp android/app/build/outputs/apk/release/app-release.apk dist/noor-android.apk
+echo "✓ dist/noor-android-$VERSION.apk + dist/noor-android.apk"

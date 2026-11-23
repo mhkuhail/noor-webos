@@ -1,19 +1,27 @@
 <div align="center">
 
-# نور · Noor for webOS
+# نور · Noor for TV
 
-**Prayer times, adhan, the full Quran and daily adhkar — on any LG webOS TV.**
+**Prayer times, adhan, the full Quran and daily adhkar — on LG webOS and Android TV / Google TV.**
 
-مواقيت الصلاة والأذان والقرآن الكريم كاملًا والأذكار — على تلفزيونات LG بنظام webOS
+مواقيت الصلاة والأذان والقرآن الكريم كاملًا والأذكار — على تلفزيونات LG وأجهزة أندرويد تي في وقوقل تي في (مثل جهاز STC TV)
 
-[![Version](https://img.shields.io/badge/version-2.1.1-1f6b4f)](https://github.com/mhkuhail/noor-webos/releases/tag/v2.1.1)
+[![Version](https://img.shields.io/badge/version-2.2.0-1f6b4f)](https://github.com/mhkuhail/noor-webos/releases/latest)
 [![webOS](https://img.shields.io/badge/LG%20webOS-4.0%2B-a50034)](docs/INSTALL.md)
+[![Android TV](https://img.shields.io/badge/Android%20TV-8.0%2B-3ddc84)](docs/ANDROID.md)
 [![Build](https://github.com/mhkuhail/noor-webos/actions/workflows/build.yml/badge.svg)](https://github.com/mhkuhail/noor-webos/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**⬇️ [Download v2.1.1 (.ipk)](https://github.com/mhkuhail/noor-webos/releases/download/v2.1.1/com.noor.webos_2.1.1_all.ipk)** · [All releases](https://github.com/mhkuhail/noor-webos/releases)
+## ⬇️ Download · التنزيل
 
-[Install](#install) · [Features](#features) · [What's new](#whats-new-in-210) · [Build from source](#build-from-source) · [Docs](docs/) · [العربية](#بالعربية)
+| Your TV · جهازك | Download · الملف | How to install · طريقة التثبيت |
+|---|---|---|
+| **Android TV / Google TV** — TCL, Sony Android, Xiaomi, **STC TV box**, Chromecast, Mi Box | **[noor-android.apk](https://github.com/mhkuhail/noor-webos/releases/latest/download/noor-android.apk)** | **[Android guide · دليل أندرويد](docs/ANDROID.md)** |
+| **LG webOS** (2018+) | **[com.noor.webos_2.2.0_all.ipk](https://github.com/mhkuhail/noor-webos/releases/download/v2.2.0/com.noor.webos_2.2.0_all.ipk)** | **[LG guide · دليل LG](docs/INSTALL.md)** |
+
+The Android link always gives the newest version. · رابط أندرويد يعطيك آخر إصدار دائمًا. · [All releases](https://github.com/mhkuhail/noor-webos/releases)
+
+[Install](#install) · [Features](#features) · [What's new](CHANGELOG.md) · [Build from source](#build-from-source) · [Docs](docs/) · [العربية](#بالعربية)
 
 <img src="docs/screenshots/zakhrafa.jpg" width="49%"> <img src="docs/screenshots/masjid.jpg" width="49%">
 
@@ -80,11 +88,14 @@ Full history: [CHANGELOG.md](CHANGELOG.md).
 
 ## Install
 
+> **Android TV / Google TV / STC TV box:** see **[docs/ANDROID.md](docs/ANDROID.md)** (10 minutes, one computer, no account needed).
+> The steps below are for **LG webOS**.
+
 **Requirements:** LG TV with webOS 4.0 or later (2018+), a free [LG developer account](https://webostv.developer.lge.com/), a computer on the same network.
 
 1. On the TV: install **Developer Mode** from the LG Content Store, sign in, turn on *Dev Mode Status* (the TV restarts), then turn on *Key Server*.
 2. On the computer: install [webOS Dev Manager](https://github.com/webosbrew/dev-manager-desktop/releases) and add the TV (IP + passphrase from the Developer Mode app).
-3. Download **[com.noor.webos_2.1.1_all.ipk](https://github.com/mhkuhail/noor-webos/releases/download/v2.1.1/com.noor.webos_2.1.1_all.ipk)** (or the newest from [Releases](https://github.com/mhkuhail/noor-webos/releases)) → Dev Manager → **Install**.
+3. Download **[com.noor.webos_2.2.0_all.ipk](https://github.com/mhkuhail/noor-webos/releases/download/v2.2.0/com.noor.webos_2.2.0_all.ipk)** (or the newest from [Releases](https://github.com/mhkuhail/noor-webos/releases)) → Dev Manager → **Install**.
 4. Open **Noor** on the TV → 🔵 Blue → *TV capability check*.
 
 Full guide with screenshots and macOS notes: **[docs/INSTALL.md](docs/INSTALL.md)**.
@@ -112,7 +123,7 @@ can wake a TV from full standby: **[docs/ALWAYS-ON.md](docs/ALWAYS-ON.md)**.
 git clone https://github.com/mhkuhail/noor-webos.git && cd noor-webos
 npm install
 # adhan recordings are in app/audio/ — replace them to use other muezzins
-npm run package            # → dist/com.noor.webos_2.1.1_all.ipk
+npm run package            # → dist/com.noor.webos_<version>_all.ipk
 npm run install-tv         # ares-install to the device named "tv" (ares-setup-device)
 ```
 
@@ -152,7 +163,7 @@ Not affiliated with LG Electronics. *webOS* and *LG* are trademarks of LG Electr
 
 **جديد: أندرويد تي في وقوقل تي في** — نفس التطبيق يعمل الآن على تي سي إل وسوني أندرويد وشاومي وأجهزة HDMI مثل جهاز STC TV (ويشغّل التلفاز غير الأندرويد عبر HDMI-CEC)، مع رسائل ورسم من الجوال وخيار «شريط تنبيه فقط» من Noor TV. التفاصيل: [docs/ANDROID.md](docs/ANDROID.md)
 
-**الإصدار الحالي: 2.1.1** — ⬇️ [تنزيل ملف التطبيق ‎.ipk‎](https://github.com/mhkuhail/noor-webos/releases/download/v2.1.1/com.noor.webos_2.1.1_all.ipk)
+**الإصدار الحالي: 2.2.0** — ⬇️ أندرويد تي في: [noor-android.apk](https://github.com/mhkuhail/noor-webos/releases/latest/download/noor-android.apk) ([طريقة التثبيت](docs/ANDROID.md#بالعربية)) · LG: [ملف ‎.ipk‎](https://github.com/mhkuhail/noor-webos/releases/download/v2.2.0/com.noor.webos_2.2.0_all.ipk)
 
 **الجديد في 2.1.0:** ١٠٦ مدن في ٣٠ دولة — جميع الدول العربية مع الولايات المتحدة وكندا · اختيار الدولة والمدينة من شبكة (OK ثم الأسهم ثم OK).
 
