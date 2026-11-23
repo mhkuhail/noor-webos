@@ -8,3 +8,10 @@ dist/
 helper/config.json
 helper/state/
 helper/node_modules/
+# Android build
+android/app/src/main/assets/www/
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+*.jks

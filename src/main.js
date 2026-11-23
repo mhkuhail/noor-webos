@@ -3,7 +3,9 @@ import { CITIES, COUNTRIES, METHODS, PRAYERS, T, ADHKAR, RECITER_URL, EZAN_FILES
 
 /* ================= state & storage ================= */
 const NOOR_VERSION = typeof __NOOR_VERSION__ !== 'undefined' ? __NOOR_VERSION__ : '';
-const DEFAULTS = { method: 'auto', iqamah: true, iqamahSound: true, iq: { fajr: 22, dhuhr: 17, asr: 17, maghrib: 7, isha: 17 }, reOff: true, renewDev: true, city: 'riyadh', lang: 'ar', theme: 'zakhrafa', h12: false, adhan: true, hijriAdj: 0, oled: true, adhanStyle: 'turkish', continuous: true, follow: true,
+// Android TV / Google TV build: the same app runs in a WebView; android-shim.js provides PalmServiceBridge on top of native code.
+const ANDROID = typeof window.NoorAndroid !== 'undefined';
+const DEFAULTS = { method: 'auto', iqamah: true, iqamahSound: true, iq: { fajr: 22, dhuhr: 17, asr: 17, maghrib: 7, isha: 17 }, reOff: true, renewDev: true, city: 'riyadh', lang: 'ar', theme: 'zakhrafa', h12: false, adhan: true, hijriAdj: 0, oled: true, adhanStyle: 'turkish', continuous: true, follow: true, adhanMode: 'interrupt', phone: true, salawat: true,
   src: { fajr: 'local', dhuhr: 'local', asr: 'local', maghrib: 'local', isha: 'local' } };
 function load(key, def) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch (e) { return def; } }
 function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { /* storage full or unavailable */ } }
@@ -78,7 +80,10 @@ function startTrial() {
 }
 function startService() {
   const c = city();
-  luna(SVC + 'start', { lat: c.lat, lng: c.lng, method: c.method, angles: CUSTOM_METHODS[c.method] || null, tz: c.tz, renew: S.renewDev, iqamah: S.iqamah ? S.iq : null }, (err) => { serviceOk = !err; });
+  const p = { lat: c.lat, lng: c.lng, method: c.method, angles: CUSTOM_METHODS[c.method] || null, tz: c.tz, renew: S.renewDev, iqamah: S.iqamah ? S.iq : null };
+  // Android has no JS runtime in the background: hand it the next 30 days of times, computed here with the same adhan-js.
+  if (ANDROID) Object.assign(p, { days: upcomingTimes(30), adhan: S.adhan, mode: S.adhanMode, phone: S.phone, salawat: S.salawat, lang: S.lang });
+  luna(SVC + 'start', p, (err) => { serviceOk = !err; });
 }
 let serviceOk = false;
 function screenCtl(on, cb) {
@@ -125,6 +130,15 @@ function timesFor(dayOffset) {
   const params = methodParams(city().method);
   const pt = new PrayerTimes(new Coordinates(city().lat, city().lng), date, params);
   return { fajr: pt.fajr, sunrise: pt.sunrise, dhuhr: pt.dhuhr, asr: pt.asr, maghrib: pt.maghrib, isha: pt.isha };
+}
+
+function upcomingTimes(n) {
+  const out = [];
+  for (let d = 0; d < n; d++) {
+    const t = timesFor(d);
+    ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].forEach((k) => out.push({ k: k, at: t[k].getTime(), fri: k === 'dhuhr' && cityNow(t[k]).getUTCDay() === 5 }));
+  }
+  return out;
 }
 
 /* ================= Hijri date ================= */
@@ -520,6 +534,8 @@ const ROWS = [
     lbl: () => tr().adhanFor + ' ' + tr()[p] + ' · ' + tr().maqamWord + ' ' + tr().maqam[p],
     fmt: (v) => { const x = ADHAN_SOURCES.filter((o) => o.id === v)[0]; return x ? x[S.lang] : v; },
   })),
+  { sec: 'adhan', k: 'adhanMode', android: true, opts: ['interrupt', 'banner'], fmt: (v) => tr().modes[v] },
+  { sec: 'adhan', k: 'salawat', android: true, opts: [true, false], fmt: onOff },
   { sec: 'adhan', k: 'reOff', opts: [true, false], fmt: onOff },
   { sec: 'adhan', k: 'test', action: () => { closePanels(); showAdhan('dhuhr'); } },
   { sec: 'adhan', k: 'trial', action: startTrial },
@@ -536,7 +552,8 @@ const ROWS = [
   { sec: 'quran', k: 'continuous', opts: [true, false], fmt: onOff },
   { sec: 'quran', k: 'follow', opts: [true, false], fmt: onOff },
   // System & support
-  { sec: 'system', k: 'renewDev', opts: [true, false], fmt: onOff },
+  { sec: 'system', k: 'renewDev', webos: true, opts: [true, false], fmt: onOff },
+  { sec: 'system', k: 'phone', android: true, opts: [true, false], fmt: onOff },
   { sec: 'system', k: 'caps', action: () => openCaps() },
   { sec: 'system', k: 'diag', action: () => openDiag() },
   { sec: 'system', k: 'exit', action: exitApp },
@@ -567,9 +584,10 @@ function pickCommit() {
   save('noor.settings', S); startService(); weather = null; fetchWeather(); tick(true);
   applyChrome(); renderSettings();
 }
-const VR = () => (settingsSec ? ROWS.filter((r) => r.sec === settingsSec) : []);
+const VR = () => (settingsSec ? ROWS.filter((r) => r.sec === settingsSec && !(r.android && !ANDROID) && !(r.webos && ANDROID)) : []);
 const rowVal = (r) => (r.get ? r.get() : r.iq ? S.iq[r.p] : r.p ? S.src[r.p] : S[r.k]);
 const rowOpts = (r) => (typeof r.opts === 'function' ? r.opts() : r.opts);
+function phoneUrl() { try { return JSON.parse(window.NoorAndroid.info()).phoneUrl || '—'; } catch (e) { return '—'; } }
 function openSettings() { view = 'settings'; settingsSec = null; pick = null; rowIdx = 0; renderSettings(); show('settings'); }
 function renderSettings() {
   const L = tr();
@@ -587,7 +605,8 @@ function renderSettings() {
       (r.lbl ? r.lbl() + (r.iq ? '' : '<small class="pv">' + (previewRow === i ? L.previewing : (i === rowIdx ? L.preview : '')) + '</small>') : L[r.label || r.k]) + '</span>' +
       '<span class="val">' + (r.action ? (r.k === 'test' ? '▶' : r.k === 'caps' ? '✓' : r.k === 'diag' ? '☰' : '⏻') : escapeHtml(r.fmt(rowVal(r)))) + '</span></div>').join('') +
       (settingsSec === 'adhan' ? ezanStatusHtml() : '') +
-      (settingsSec === 'system' ? '<div class="note">Noor ' + NOOR_VERSION + ' for webOS · prayer times calculated on-device (adhan-js) · Quran text: alquran.cloud · Recitation: Badr Al-Turki (mp3quran.net) · Weather: Open-Meteo · github.com/mhkuhail/noor-webos</div>' : '');
+      (settingsSec === 'system' && ANDROID && S.phone ? '<div class="note">' + escapeHtml(tr().phoneUrl) + ' <b style="direction:ltr;unicode-bidi:embed">' + escapeHtml(phoneUrl()) + '</b></div>' : '') +
+      (settingsSec === 'system' ? '<div class="note">Noor ' + NOOR_VERSION + (ANDROID ? ' for Android TV' : ' for webOS') + ' · prayer times calculated on-device (adhan-js) · Quran text: alquran.cloud · Recitation: Badr Al-Turki (mp3quran.net) · Weather: Open-Meteo · github.com/mhkuhail/noor-webos</div>' : '');
   }
   if (pick) {
     const r = pick.row;
@@ -640,7 +659,7 @@ function changeRow(dir) {
   const v = opts[((cur < 0 ? 0 : cur) + dir + opts.length) % opts.length];
   if (r.set) r.set(v); else S[r.k] = v;
   save('noor.settings', S);
-  if (['country', 'city', 'method', 'renewDev', 'iqamah'].indexOf(r.k) >= 0) { startService(); weather = null; fetchWeather(); tick(true); }
+  if (['country', 'city', 'method', 'renewDev', 'iqamah', 'adhan', 'adhanMode', 'phone', 'salawat', 'lang'].indexOf(r.k) >= 0 || r.iq) { startService(); weather = null; fetchWeather(); tick(true); }
   applyChrome(); renderSettings();
 }
 
